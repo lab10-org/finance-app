@@ -1,0 +1,126 @@
+.empty {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1 1 auto;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px var(--screen-pad) 14px;
+  width: 100%;
+}
+
+.headLabel {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: var(--text-tertiary);
+}
+
+.headCount {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.4px;
+  color: var(--text-tertiary);
+}
+
+.divider {
+  height: 1px;
+  background: var(--divider);
+  width: 100%;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  padding: 64px var(--screen-pad) 0;
+  width: 100%;
+}
+
+.headline {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  line-height: 1.28;
+  color: var(--text-primary);
+}
+
+.support {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+  padding: 44px var(--screen-pad) 0;
+  width: 100%;
+}
+
+.spacer {
+  flex: 1 1 auto;
+  min-height: 48px;
+}
+
+.action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0 var(--screen-pad);
+  width: 100%;
+}
+
+.cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 58px;
+  border-radius: 29px;
+  background: var(--accent);
+  color: var(--surface);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+}
+
+.promise {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.1px;
+  color: var(--text-tertiary);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px var(--screen-pad) 30px;
+  width: 100%;
+}
+
+.period {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  color: var(--text-tertiary);
+}
+
+.total {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: -0.2px;
+  color: var(--text-tertiary);
+}

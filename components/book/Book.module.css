@@ -1,0 +1,43 @@
+.book {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1 1 auto;
+  padding-bottom: 84px;
+}
+
+.closing {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.rule {
+  height: 1px;
+  background: var(--border);
+  width: 100%;
+}
+
+.sum {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px var(--screen-pad);
+  width: 100%;
+}
+
+.sumLabel {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: var(--text-tertiary);
+}
+
+.sumAmount {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+  color: var(--text-primary);
+}

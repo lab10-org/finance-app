@@ -14,6 +14,11 @@ un solo vistazo.
 Producto en español (Colombia). Montos en pesos colombianos con separador de
 miles por punto (`$1.284.500`).
 
+## Stack Tecnologico
+
+- Next.JS + Typescript
+- 
+
 ## Estado actual
 
 El repositorio **todavía no tiene código**. Lo único que existe son los
@@ -91,3 +96,13 @@ Ejecutar el plan aprobado.
 - **Mobile-first**: el diseño base es 390px de ancho. Cualquier vista de
   escritorio es una extensión posterior, no el punto de partida.
 - Los estados vacíos se implementan junto con la vista, no después.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

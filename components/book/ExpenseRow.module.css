@@ -1,0 +1,58 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 12px var(--screen-pad);
+  width: 100%;
+  text-align: left;
+}
+
+.glyph {
+  color: var(--text-tertiary);
+  flex: none;
+}
+
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.title,
+.category {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.1px;
+  color: var(--text-primary);
+}
+
+.category {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.amount {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+  flex: none;
+}
+
+.hairline {
+  /* Blockified explicitly: as an inline element this collapsed to nothing. */
+  display: block;
+  height: 1px;
+  background: var(--divider);
+  width: 100%;
+}

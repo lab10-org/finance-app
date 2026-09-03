@@ -1,0 +1,35 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.selector {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  width: 24px;
+  height: 24px;
+  margin: -4px;
+}
+
+.step:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.title {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  color: var(--text-primary);
+  white-space: nowrap;
+}

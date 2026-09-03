@@ -1,0 +1,33 @@
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 92px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.toast {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: calc(390px - var(--screen-pad) * 2);
+  max-width: calc(100vw - var(--screen-pad) * 2);
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: var(--text-primary);
+  color: var(--surface);
+  font-size: 12.5px;
+}
+
+.undo {
+  color: var(--accent-4);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}

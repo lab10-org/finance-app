@@ -1,0 +1,8 @@
+.shell {
+  max-width: 390px;
+  margin-inline: auto;
+  min-height: 100dvh;
+  background: var(--bg);
+  position: relative;
+  overflow-x: hidden;
+}

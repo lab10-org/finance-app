@@ -1,0 +1,30 @@
+.group {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px var(--screen-pad);
+  width: 100%;
+  background: var(--bg);
+}
+
+.date {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: var(--text-secondary);
+}
+
+.subtotal {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  color: var(--text-secondary);
+}

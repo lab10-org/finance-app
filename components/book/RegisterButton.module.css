@@ -1,0 +1,32 @@
+.dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  padding-bottom: 28px;
+  pointer-events: none;
+}
+
+.inner {
+  width: 390px;
+  display: flex;
+  justify-content: flex-end;
+  padding-right: var(--screen-pad);
+}
+
+.fab {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 148px;
+  height: 50px;
+  border-radius: 25px;
+  background: var(--accent);
+  color: var(--surface);
+  font-size: 14px;
+  font-weight: 600;
+}

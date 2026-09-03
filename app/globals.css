@@ -1,0 +1,73 @@
+/*
+ * Design tokens — mirrored one-to-one from docs/mockups/v1.pen (11.4).
+ * No colour may be written anywhere else in the app; add it here first.
+ */
+:root {
+  --bg: #F4F4F2;
+  --surface: #FFFFFF;
+  --border: #E7E7E2;
+  --divider: #EDEDE9;
+
+  --text-primary: #15171B;
+  --text-secondary: #7C808A;
+  --text-tertiary: #A2A6AE;
+
+  --accent: #2A4BA0;
+  --accent-soft: #EBEFF8;
+  --icon-bg: #F0F0EC;
+
+  --accent-2: #4E6DB4;
+  --accent-3: #7A90C9;
+  --accent-4: #A9B6DC;
+  --accent-5: #D7DDEE;
+
+  --screen-pad: 24px;
+  --radius-card: 16px;
+
+  --font-ui: var(--font-inter), Inter, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  --font-num: var(--font-plex-mono), "IBM Plex Mono", ui-monospace,
+    SFMono-Regular, monospace;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+input {
+  font: inherit;
+  color: inherit;
+}
+
+/* Numbers and amounts always use the mono family. */
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
