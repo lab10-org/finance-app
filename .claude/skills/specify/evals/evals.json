@@ -1,0 +1,56 @@
+{
+  "skill_name": "specify",
+  "evals": [
+    {
+      "id": 0,
+      "name": "registro-rapido-de-gasto",
+      "prompt": "Quiero formalizar la feature de registro rápido de un gasto antes de construir nada. La idea es esta: desde la pantalla de inicio el usuario abre una hoja de registro, escribe el monto en pesos, elige una categoría (Mercado, Transporte, Comida, Otros) y guarda. Todo el flujo tiene que tomar menos de 10 segundos y el gasto guardado aparece de primero en la lista del día. Si el usuario no elige categoría, el gasto cae en «Otros». Escribamos el spec.",
+      "expected_output": "The skill creates docs/specs/<YYYY-MM-DD>-<slug>/requirements.md with numbered requirements and EARS acceptance criteria written in English, quoting the domain categories verbatim, then stops and asks the user to review before writing design.md. Once the user approves, it writes design.md tracing components, data models, error handling and testing strategy back to the numbered criteria.",
+      "files": [],
+      "expectations": [
+        "requirements.md is created inside a dated feature folder matching docs/specs/<YYYY-MM-DD>-<feature-slug>/",
+        "Acceptance criteria use EARS notation (WHEN / IF / THEN / WHILE / WHERE combined with SHALL)",
+        "Requirements and criteria are numbered and traceable (Requirement 1, criteria 1.1, 1.2)",
+        "The document contains user stories in the form 'As a <role>, I want <capability>, so that <benefit>'",
+        "At least one error-handling criterion is present in the form 'IF ... THEN THE SYSTEM SHALL ...'",
+        "The content of requirements.md is written in English, while domain terms given by the user (such as the category \"Otros\") are quoted verbatim",
+        "The approval gate is respected: the skill stops after requirements.md and asks for review before creating design.md",
+        "After a simulated approval, design.md contains architecture, data models, error handling and testing strategy, each tracing back to the numbered requirement criteria"
+      ]
+    },
+    {
+      "id": 1,
+      "name": "resumen-mensual-por-categoria",
+      "prompt": "Necesito escribir los requisitos de la vista de resumen del mes. El usuario entra y ve cuánto lleva gastado en el mes (por ejemplo $1.284.500) y el desglose por categoría ordenado de mayor a menor, con el porcentaje de cada una. Si todavía no hay ningún gasto registrado en el mes, tiene que verse el estado vacío en vez de una tabla en ceros. Es mobile-first, 390px.",
+      "expected_output": "The skill produces requirements.md in a dated folder covering both the happy path (totals and the ordered per-category breakdown) and the empty-state / error path in EARS notation, numbered and in English, then stops for approval before writing design.md.",
+      "files": [],
+      "expectations": [
+        "requirements.md is created inside a dated feature folder matching docs/specs/<YYYY-MM-DD>-<feature-slug>/",
+        "Acceptance criteria use EARS notation (WHEN / IF / THEN / WHILE / WHERE combined with SHALL)",
+        "Requirements and criteria are numbered and traceable (Requirement 1, criteria 1.1, 1.2)",
+        "The document contains user stories in the form 'As a <role>, I want <capability>, so that <benefit>'",
+        "At least one error-handling criterion is present in the form 'IF ... THEN THE SYSTEM SHALL ...', covering the empty state when there are no expenses in the month",
+        "The content of requirements.md is written in English, while domain terms and sample data given by the user are quoted verbatim",
+        "The approval gate is respected: the skill stops after requirements.md and asks for review before creating design.md",
+        "After a simulated approval, design.md contains architecture, data models, error handling and testing strategy, each tracing back to the numbered requirement criteria"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "gastos-recurrentes-idea-vaga",
+      "prompt": "Se me ocurrió algo con los gastos que se repiten todos los meses, como el arriendo o las suscripciones. Todavía no lo tengo claro, pero quiero dejarlo escrito antes de ponernos a implementar.",
+      "expected_output": "Because the idea is vague, the skill first asks a few sharp questions (who the user is, what triggers the feature, what success looks like, what the failure cases are) instead of inventing requirements. Only after the answers does it write requirements.md in the dated folder, in English and in EARS notation, parking everything still undecided in Open questions and everything excluded in Out of scope.",
+      "files": [],
+      "expectations": [
+        "requirements.md is created inside a dated feature folder matching docs/specs/<YYYY-MM-DD>-<feature-slug>/",
+        "Acceptance criteria use EARS notation (WHEN / IF / THEN / WHILE / WHERE combined with SHALL)",
+        "Requirements and criteria are numbered and traceable (Requirement 1, criteria 1.1, 1.2)",
+        "The document contains user stories in the form 'As a <role>, I want <capability>, so that <benefit>'",
+        "At least one error-handling criterion is present in the form 'IF ... THEN THE SYSTEM SHALL ...'",
+        "The content of requirements.md is written in English, while domain terms given by the user are quoted verbatim",
+        "The skill asks sharp clarifying questions before committing to any requirement, instead of inventing behavior to fill the gaps",
+        "The Out of scope and/or Open questions sections are used to park what is excluded and what is still undecided"
+      ]
+    }
+  ]
+}

@@ -66,6 +66,14 @@ archivos.
   persistencia) que la fase anterior dejó planteadas.
 - El plan se confirma con el usuario antes de ejecutarlo.
 
+Esta fase la conduce la skill **`/specify`** (método Requirements-First): toma
+la decisión que salió de `/brainstorming` y la formaliza en `requirements.md`
+→ `design.md` → `tasks.md`, dentro de
+`docs/specs/<YYYY-MM-DD>-<feature-slug>/`, con una parada de aprobación del
+usuario entre cada documento. La Implementación no arranca hasta que
+`tasks.md` esté aprobado. Los tres documentos se escriben en inglés; al
+usuario se le sigue hablando en español.
+
 ### 3. Implementación
 
 Ejecutar el plan aprobado.
