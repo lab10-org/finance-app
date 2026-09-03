@@ -47,14 +47,13 @@ siguiente sin haber cerrado la anterior.
 
 ### 1. Brainstorming
 
-Explorar el problema antes que la solución. Aquí se discute qué necesita el
-usuario, qué alternativas hay, qué queda fuera del alcance. Se permiten ideas
-a medio cocinar y se comparan enfoques.
+Explorar el problema antes que la solución. Salida esperada: una decisión de
+producto o de enfoque, con su razón.
 
-- Salida esperada: una decisión de producto o de enfoque, con su razón.
-- **No se escribe código de implementación en esta fase.**
-- Si el usuario abre un tema en modo exploratorio, responder explorando —
-  no arrancar a implementar.
+Esta fase la conduce la skill **`/brainstorming`**.
+Invocarla cuando el usuario abra un tema en modo exploratorio, pida ideas o
+alternativas, o plantee algo nuevo sin decisión de producto tomada. No
+improvisar el brainstorming por fuera de la skill.
 
 ### 2. Planeación
 
