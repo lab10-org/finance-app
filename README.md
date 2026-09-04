@@ -96,6 +96,22 @@ supabase test db                  # corre las pruebas pgTAP de supabase/tests/da
 `supabase db reset` es la comprobación de que las migraciones bastan: si una base
 recién borrada queda utilizable sin ningún paso manual, el esquema está completo.
 
+> **`db reset` no recarga la configuración.** Reaplica las migraciones, pero deja
+> intacto lo que el contenedor de auth cargó al arrancar: `config.toml` y las
+> plantillas de `supabase/templates/`. Si cambiaste una de esas dos cosas —o si
+> arrancaste el stack desde otro directorio, por ejemplo un worktree— hay que
+> reiniciarlo:
+>
+> ```bash
+> supabase stop && supabase start
+> ```
+>
+> El síntoma es desconcertante: el correo de entrada llega con un enlace en vez
+> del código de seis dígitos, porque GoTrue está sirviendo su plantilla por
+> defecto y no la nuestra. Al hacer clic, el enlace consume el token y devuelve
+> la sesión en el fragmento de la URL, que esta app no lee —su entrada es de dos
+> pasos—, así que uno vuelve a "la entrada" sin ninguna explicación.
+
 ### Las pruebas de la base
 
 `npm test` corre vitest, que no ejecuta SQL. Lo que puede comprobar es el texto
