@@ -165,6 +165,9 @@ cost more than the purchase did.
 5.7 THE SYSTEM SHALL NOT record the same expense twice when the user confirms
     once, including when a failed write is retried and the original write
     eventually succeeded.
+5.8 THE SYSTEM SHALL decide 5.7 from an identifier the client attaches to the
+    confirmation, not by comparing the values of expenses — so that two genuinely
+    identical expenses recorded close together are never collapsed into one.
 
 ### Requirement 6 — Editing and deleting reach the database
 
@@ -179,8 +182,9 @@ so that the book stays true.
     previous values in the book and tell the user the change was not saved.
 6.3 WHEN the user deletes an expense THE SYSTEM SHALL remove it from the book
     immediately and keep it recoverable for the existing undo window.
-6.4 WHEN the undo window expires without the user undoing THE SYSTEM SHALL mark
-    the expense as deleted in the database.
+6.4 WHEN the user deletes an expense THE SYSTEM SHALL mark it as deleted in the
+    database at once, so that the deletion never depends on the app staying open
+    for the length of the undo window.
 6.5 WHEN the user undoes a deletion THE SYSTEM SHALL restore the expense to the
     exact position it held, with all of its values unchanged.
 6.6 IF the user closes or reloads the app during the undo window THEN THE SYSTEM
@@ -299,6 +303,9 @@ a database change.
      render the book.
 11.4 IF such an expense is read THEN THE SYSTEM SHALL still include its amount in
      the month total, so that the header stays truthful.
+11.5 WHEN the user confirms an edit to such an expense THE SYSTEM SHALL store its
+     category as `"otros"`, so that an unknown value never survives a write the
+     interface made.
 
 ### Requirement 12 — The schema changes only through migrations
 
@@ -356,3 +363,14 @@ None. The four questions this document opened were closed on 2026-09-04:
 - *Are pre-existing accounts seeded?* — No. Now 8.7.
 - *Does a failed write get a retry?* — Yes, every failed write offers one. Now
   5.5, 6.9 and 7.5.
+
+Three more were raised by the design pass and closed on the same day:
+
+- *6.4 contradicted 6.6* — the deletion could not both wait for the undo window
+  and survive the tab closing. 6.4 now says the mark is written at once; undo
+  became a restore. The undo window is unchanged from the user's side.
+- *How is 5.7 decided?* — By a client-supplied identifier, not by comparing
+  field values. Now 5.8; the value-comparison heuristic the design first
+  proposed would have merged two identical expenses recorded close together.
+- *What happens to an unknown category when the row is edited?* — It is
+  normalised to `"otros"`. Now 11.5.

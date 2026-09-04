@@ -176,11 +176,17 @@ create table public.expenses (
   date        date not null,
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now(),
-  deleted_at  timestamptz
+  deleted_at  timestamptz,
+  -- One per confirmation, reused by its retries (5.8). Null for rows the seed
+  -- trigger writes, which no client ever retries.
+  client_op_id uuid
 );
 
 create index expenses_user_date_idx
   on public.expenses (user_id, date desc) where deleted_at is null;
+
+create unique index expenses_client_op_id_idx
+  on public.expenses (user_id, client_op_id) where client_op_id is not null;
 
 alter table public.expenses enable row level security;
 
@@ -363,24 +369,30 @@ already states.
 export interface ExpenseRepository {
   /** `month` and the month before it, deleted rows excluded (3.3, 4.1). */
   readWindow(month: MonthKey): Promise<Expense[]>;
-  create(draft: ExpenseDraft): Promise<Expense>;
+  /**
+   * `clientOpId` is generated once per confirmation and reused by every retry
+   * of it. The unique index on (user_id, client_op_id) makes a retry of a write
+   * that actually landed return the existing row instead of inserting a second
+   * one (5.7, 5.8).
+   */
+  create(draft: ExpenseDraft, clientOpId: string): Promise<Expense>;
   update(id: string, draft: ExpenseDraft): Promise<Expense>;
   /** Sets `deleted_at = now()`; the row survives (6.10). */
   softDelete(id: string): Promise<void>;
   /** Clears `deleted_at`; the undo of a soft deletion (6.5). */
   restore(id: string): Promise<void>;
-  /**
-   * A row matching this draft created at or after `sinceIso`. Used only before
-   * retrying a failed create, so that a write that actually landed is adopted
-   * instead of duplicated (5.7).
-   */
-  findRecentMatch(draft: ExpenseDraft, sinceIso: string): Promise<Expense | null>;
 }
 
 export function createExpenseRepository(client: SupabaseClient): ExpenseRepository;
 ```
 
-- **Traces to:** 1.1, 1.4, 1.5, 2.2, 5.7, 6.10
+- **Traces to:** 1.1, 1.4, 1.5, 2.2, 5.7, 5.8, 6.10
+
+`create` inserts with `on conflict (user_id, client_op_id) do nothing` and, when
+that returns no row, selects the row bearing that `client_op_id`. The retry
+therefore adopts the landed write without ever comparing amounts or dates, which
+is what 5.8 requires: two genuinely identical expenses carry different
+`client_op_id`s and stay two expenses.
 
 `readWindow` selects on `date >= firstDayOf(previousMonth(month))` and
 `date <= lastDayOf(month)` with `deleted_at is null`, ordered by
@@ -691,9 +703,10 @@ expenses(id uuid pk, user_id uuid not null, amount numeric(14,2) > 0,
 3. `WriteFailureToast` shows the message and "Reintentar"; the sheet reopens
    pre-filled with the draft that failed, so nothing typed is lost — satisfies
    5.4, 5.5.
-4. `retryFailure()` first calls `findRecentMatch(draft, op.startedAt)`. A match
-   means the original insert actually landed despite the error: it is adopted,
-   not re-inserted — satisfies 5.7.
+4. `retryFailure()` re-sends the op with the SAME `clientOpId` it was created
+   with. If the original insert actually landed despite the error, the unique
+   index turns the retry into a read of that row rather than a second insert —
+   satisfies 5.7 and 5.8.
 
 ### Scenario: returning to the tab (Requirement 9)
 
@@ -719,7 +732,7 @@ expenses(id uuid pk, user_id uuid not null, amount numeric(14,2) > 0,
 | A month read fails after navigation | That month's slice becomes `error`; `MonthError` offers a retry and the previously viewed month's slices are untouched | 4.4 |
 | The insert fails | The optimistic row is removed, `WriteFailureToast` says it could not be saved, and the sheet reopens with the entry intact | 5.4 |
 | The user asks to retry a failed insert | The stored op is run again with the same draft, no retyping | 5.5 |
-| A retried insert would duplicate a write that actually landed | `findRecentMatch(draft, startedAt)` is consulted first; a match is adopted instead of inserted | 5.7 |
+| A retried insert would duplicate a write that actually landed | The retry carries the original `clientOpId`; the unique index makes it read the landed row instead of inserting | 5.7, 5.8 |
 | The update fails | `before` is restored into the slice and the user is told the change was not saved | 6.2 |
 | The tab closes during the undo window | The soft delete was already sent, so the row does not come back | 6.6 |
 | The soft delete fails | The expense returns to the book and the user is told it was not deleted | 6.8 |
@@ -830,6 +843,20 @@ expenses(id uuid pk, user_id uuid not null, amount numeric(14,2) > 0,
   it on expiry, with a `beforeunload` flush. `beforeunload` cannot await a
   request; the flush would be best-effort, and 6.6 would hold only when the
   network was fast enough. A guarantee that depends on luck is not one.
+
+### Idempotency by `client_op_id`, not by matching field values
+
+- **Rationale:** an insert whose response is lost is indistinguishable from one
+  that never arrived, so 5.7 cannot be decided from the data alone. A key the
+  client attaches to the confirmation and repeats on every retry makes it exact:
+  the unique index rejects the second write and hands back the first row.
+- **Alternative considered:** compare amount, category, description and date
+  against rows created since the first attempt. It needs no schema change, but
+  it merges two genuinely identical expenses recorded close together — a pattern
+  this very seed contains twice ("Café Velvet", "Recarga Cívica"), and one an
+  expense tracker must never do silently. Requirement 5.8 was added to forbid it.
+- **Cost:** one nullable column and one partial unique index beyond the schema
+  fixed during brainstorming.
 
 ### Seeding by trigger on `auth.users`, not on first sign-in
 

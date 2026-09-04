@@ -97,6 +97,7 @@ for the local stack, and Docker must be running for them.
 | 5.5 | T9, T12 |
 | 5.6 | T9 |
 | 5.7 | T9 |
+| 5.8 | T3, T6, T9 |
 | 6.1 | T10 |
 | 6.2 | T10, T12 |
 | 6.3 | T10 |
@@ -136,6 +137,7 @@ for the local stack, and Docker must be running for them.
 | 11.2 | T5 |
 | 11.3 | T5 |
 | 11.4 | T5 |
+| 11.5 | T5, T10 |
 | 12.1 | T2, T3, T4 |
 | 12.2 | T13 |
 | 12.3 | T13 |
@@ -203,8 +205,8 @@ for the local stack, and Docker must be running for them.
 ### T3 — The `expenses` table, its index and its ownership rules
 
 - **Status:** `[ ]`
-- **Traces to:** 1.1, 2.1, 2.2, 2.3, 2.4, 6.10, 10.1, 10.4, 10.5, 10.6, 10.7,
-  11.1, 12.1 — `supabase/migrations/<ts>_expenses.sql`
+- **Traces to:** 1.1, 2.1, 2.2, 2.3, 2.4, 5.8, 6.10, 10.1, 10.4, 10.5, 10.6,
+  10.7, 11.1, 12.1 — `supabase/migrations/<ts>_expenses.sql`
 - **Depends on:** T2
 - **Objective:** an expense has a place to live that only its owner can reach.
 
@@ -295,7 +297,7 @@ for the local stack, and Docker must be running for them.
 ### T6 — The `ExpenseRepository` seam and the widened import guard
 
 - **Status:** `[ ]`
-- **Traces to:** 1.1, 1.3, 2.2, 3.3, 6.7, 6.10 — `lib/expenses/repository.ts`,
+- **Traces to:** 1.1, 1.3, 2.2, 3.3, 5.8, 6.7, 6.10 — `lib/expenses/repository.ts`,
   `app/__tests__/no-stray-colours.test.ts`
 - **Depends on:** T3, T5
 - **Objective:** every statement this feature sends lives behind one interface a
@@ -308,9 +310,10 @@ for the local stack, and Docker must be running for them.
    spans `2026-08-01` to `2026-09-30`, filters `deleted_at is null`, orders by
    `date desc, created_at desc`, and names no `user_id`; `create` sends the
    insert and returns the mapped row from `.select().single()`; `softDelete`
-   and `restore` issue updates of `deleted_at` and never a `DELETE`;
-   `findRecentMatch` filters on amount, category, description, date and
-   `created_at >= since`. Update
+   and `restore` issue updates of `deleted_at` and never a `DELETE`; `create`
+   called twice with the same `clientOpId` inserts once and returns the same
+   row, and called twice with different ones for an identical draft returns two
+   distinct rows (5.8). Update
    `app/__tests__/no-stray-colours.test.ts` first, so it fails for the right
    reason: add `lib/expenses` and `app/page.tsx` to the whitelist and delete the
    "persists no expense in the browser" clause, whose subject this feature
@@ -389,7 +392,8 @@ for the local stack, and Docker must be running for them.
 ### T9 — Optimistic registration and the adoption of the real id
 
 - **Status:** `[ ]`
-- **Traces to:** 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 7.1, 7.2, 7.3, 7.4, 10.4 —
+- **Traces to:** 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 7.1, 7.2, 7.3, 7.4,
+  10.4 —
   `lib/expenses/op-queue.ts`, `state/book-actions.ts`, `bookReducer`
 - **Depends on:** T8
 - **Objective:** confirming the sheet is instantaneous, and the row quietly
@@ -406,8 +410,9 @@ for the local stack, and Docker must be running for them.
    pending, with the same controls; `adoptId` swaps the id without the row
    changing position or value; a queued edit runs against the adopted id and
    against no other row; a rejecting `create` removes the row, records the
-   failure with its draft, and `retryFailure` consults `findRecentMatch` first —
-   a match is adopted and no second insert is sent.
+   failure with its draft, and `retryFailure` re-sends the op carrying the same
+   `clientOpId`, so a write that had actually landed is adopted rather than
+   inserted a second time.
 2. **Implement (green):** write `lib/expenses/op-queue.ts`; add `register`,
    `retryFailure` and `dismissFailure` to `state/book-actions.ts`; add the
    `register` / `adoptId` / `opSettled` / `opFailed` cases to the reducer.
