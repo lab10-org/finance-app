@@ -50,7 +50,7 @@ for the local stack, and Docker must be running for them.
 ## Task overview
 
 - [x] T1 — An expense carries an amount and a currency
-- [ ] T2 — `uuid_generate_v7()` and its bit layout
+- [x] T2 — `uuid_generate_v7()` and its bit layout
 - [ ] T3 — The `expenses` table, its index and its ownership rules
 - [ ] T4 — The seeded book as a relative template and a trigger
 - [ ] T5 — The row mapper and the unknown category
@@ -193,7 +193,7 @@ returns nothing outside `docs/specs`.
 
 ### T2 — `uuid_generate_v7()` and its bit layout
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 10.8, 12.1 — `supabase/migrations/<ts>_uuid_generate_v7.sql`
 - **Depends on:** none
 - **Objective:** Postgres can generate a UUIDv7, and the claim that it *is* a v7
@@ -217,7 +217,35 @@ returns nothing outside `docs/specs`.
 
 **Decision log**
 
+- **The 12 bits of `rand_a` hold the sub-millisecond clock, not random data**
+  (RFC 9562 §6.2, "replace leftmost random bits with increased clock
+  precision"). The design warned that the copied snippets differ; they do, and
+  the difference matters. Measured against the local database, the widely-copied
+  variant — timestamp in the first six bytes, `set_bit(52)`/`set_bit(53)`,
+  `rand_a` left random — produced **61,076 out-of-order pairs among 500 ids
+  generated in one burst**, out of 124,750 possible: ordering inside a
+  millisecond is a coin flip. The same measurement on this implementation gives
+  **0**. Both report version `7`, so a test that only checked the version nibble
+  would have passed the broken one. That is why the burst test exists.
+- `clock_timestamp()` rather than `now()`: `now()` is fixed for the whole
+  transaction, so a multi-row insert — the seed of T4 is exactly that — would put
+  every row in the same millisecond and hand their order back to chance.
+- Verified that `set_bit`'s index numbers bits from the least significant end of
+  each byte, which is why the version nibble of byte 6 sits at indices 52-55. The
+  implementation sets whole bytes with `set_byte` instead, which makes the layout
+  legible without that footnote.
+- The static vitest file asserts only what text can prove — the folder exists,
+  the filenames sort, the version byte is written at all. Everything behavioural
+  is pgTAP's job.
+
 **Outcome**
+
+Done and verified. `npm test` green on the static half. `supabase db reset`
+applies the migration cleanly, and `supabase test db` reports **7/7 pgTAP
+assertions passing**: the function exists, the version nibble is `7`, the variant
+bits are `10xx`, the leading 48 bits are the current unix time in milliseconds,
+12 ids generated 2 ms apart sort in generation order, 500 ids generated in a
+tight burst also sort in generation order, and all 500 are distinct.
 
 ### T3 — The `expenses` table, its index and its ownership rules
 
