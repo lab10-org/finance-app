@@ -164,6 +164,8 @@ La app corre en **Cloudflare Workers** con
 [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare), que es la
 integración propia de Cloudflare para Next.
 
+Desplegada en **https://finance-app.finance-app.workers.dev**.
+
 No hay versión estática posible: `proxy.ts` refresca la sesión de Supabase en
 cada request, así que siempre hay servidor. Por eso Workers y no Pages con
 `output: export`.
