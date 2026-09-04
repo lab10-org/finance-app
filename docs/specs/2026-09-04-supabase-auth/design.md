@@ -315,7 +315,8 @@ export type EntradaAction =
   | { type: "submitCode" }
   | { type: "verified" }
   | { type: "failed"; failure: AuthFailure; now: number }
-  | { type: "resend" }
+  /** `now` corrected during T6: the reducer enforces the cooldown itself. */
+  | { type: "resend"; now: number }
   | { type: "backToEmail" };
 
 export function initialEntradaState(): EntradaState;

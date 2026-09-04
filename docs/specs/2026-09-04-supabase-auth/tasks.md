@@ -43,9 +43,9 @@ more later than the checkmark next to it.
 - [x] T1 — The local Supabase stack, under version control
 - [x] T2 — The environment contract and the Supabase clients
 - [x] T3 — Re-scope the v1 network guard to expense data
-- [ ] T4 — Auth failures and their Spanish messages
-- [ ] T5 — The `AuthClient` seam over Supabase
-- [ ] T6 — The "la entrada" state machine
+- [x] T4 — Auth failures and their Spanish messages
+- [x] T5 — The `AuthClient` seam over Supabase
+- [x] T6 — The "la entrada" state machine
 - [ ] T7 — "La entrada": the email step
 - [ ] T8 — "La entrada": the code step
 - [ ] T9 — "La entrada": layout, tokens and copy at 390px
@@ -263,7 +263,7 @@ for free. Suite at 180 passing.
 
 ### T4 — Auth failures and their Spanish messages
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 2.7, 3.4, 3.5, 3.7, 7.4, 7.6, 8.1, 8.2, 8.3 —
   `lib/auth/errors.ts`, `lib/auth/validate-email.ts`, `lib/auth/types.ts`
 - **Depends on:** T1
@@ -290,11 +290,22 @@ for free. Suite at 180 passing.
 
 **Decision log**
 
+- `TimeoutError` is defined in `errors.ts`, not in `auth-client.ts` as the
+  design's prose implied. `toAuthFailure` has to recognise it, and putting the
+  class in the module that maps it avoids a cycle between the two files.
+- `describeFailure` gives `code-unverified` the same copy as `code-rejected`.
+  The reducer always refines it first, so the branch should be unreachable; of
+  the two readings, "the code is wrong" is the safe one to show if it ever is.
+
 **Outcome**
+
+Done. `lib/auth/types.ts`, `errors.ts` and `validate-email.ts` with 20 new
+tests, including one that walks every `AuthFailure` kind so a kind added later
+without Spanish copy fails the suite.
 
 ### T5 — The `AuthClient` seam over Supabase
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 2.2, 2.4, 2.5, 3.3, 6.4, 8.1, 8.2 — `lib/auth/auth-client.ts`
 - **Depends on:** T2, T4
 - **Objective:** the three auth operations exist as a `Result`-returning
@@ -321,11 +332,22 @@ for free. Suite at 180 passing.
 
 **Decision log**
 
+- The design describes `AuthClient` catching rejections. supabase-js mostly
+  does not reject — it answers `{ data, error }` — so a client that only caught
+  rejections would read every refusal as a success. The `attempt` helper treats
+  both shapes as failure, and there are tests for each.
+- `verifyCode` falls back to the submitted address when the returned account
+  carries no email, keeping the `SessionUser.email` non-empty invariant that
+  `AccountControl` depends on.
+
 **Outcome**
+
+Done. `lib/auth/auth-client.ts` with 13 tests covering both failure shapes, the
+`{ scope: "local" }` fallback, and a hung request timing out under fake timers.
 
 ### T6 — The "la entrada" state machine
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 2.3, 2.6, 2.7, 3.1, 3.4, 3.5, 3.6, 8.4 —
   `lib/auth/entrada-machine.ts`
 - **Depends on:** T4
@@ -354,7 +376,21 @@ for free. Suite at 180 passing.
 
 **Decision log**
 
+- **Design corrected.** `EntradaAction`'s `resend` was typed `{ type: "resend" }`
+  with no `now`, but this task requires the reducer to ignore a resend during
+  the cooldown — which it cannot check without a clock. The action now carries
+  `now`, like `failed` and `codeSent`, and `design.md` was updated to match.
+  Enforcing it in the reducer rather than only in a disabled button is what
+  stops a request leaving the device early.
+- `backToEmail` clears the code. Returning to the address step means the
+  person is about to request a different code, so keeping the old digits would
+  only pre-fill the next screen with something already dead.
+
 **Outcome**
+
+Done. `lib/auth/entrada-machine.ts` with 35 tests, including the table for
+`cooldownRemaining` and `codeHasExpired` and the full failure matrix proving
+`step` and `email` survive every failure kind.
 
 ### T7 — "La entrada": the email step
 
