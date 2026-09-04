@@ -1,322 +1,102 @@
-import { DEFAULT_CURRENCY } from "@/lib/domain/types";
-import type { Expense, MonthKey } from "@/lib/domain/types";
-
-/** A seed row carries no currency of its own; it is stamped below (10.3). */
-type SeedRow = Omit<Expense, "currency">;
+import type { CategoryId } from "@/lib/domain/types";
 
 /*
- * Seed data for the prototype (10.1, 10.2). It lives only in memory: every
- * registration, edit and deletion is discarded on reload (10.3, 10.4).
+ * The book a brand-new account starts with (Requirement 8).
  *
- * July 2026 is deliberately empty so the empty state is reachable without
- * deleting anything. August reproduces the "$1.412.300" the mockup shows under
- * "MES ANTERIOR", and September carries the exact rows drawn in frame zKnc1.
+ * The rows are stored as OFFSETS, not dates: `monthOffset` 0 is the month the
+ * account was created in and -1 the month before it, so a seeded book always
+ * lands on months the user will actually look at, whenever they sign up (8.2).
+ * Turning them into absolute dates is the migration's job, because that is where
+ * the account's creation date is known.
  *
- * `createdAt` descends within a day so the first row listed here is the one
- * that renders on top (1.3).
+ * This stays TypeScript rather than moving into the .sql file so that the
+ * assertions tying these numbers to the mockup — the previous month's
+ * $1.412.300, the eight rows of frame zKnc1 — remain runnable under vitest. A
+ * test compares `renderSeedValues()` against the committed migration, which is
+ * what keeps the two from drifting apart.
  */
-const SEED_ROWS: SeedRow[] = [
-  {
-    id: "seed-1",
-    date: "2026-08-01",
-    amount: 132400,
-    categoryId: "mercado",
-    description: "Éxito Poblado",
-    createdAt: 1785585660000,
-  },
-  {
-    id: "seed-2",
-    date: "2026-08-02",
-    amount: 38900,
-    categoryId: "restaurantes",
-    description: "Crepes & Waffles",
-    createdAt: 1785672060000,
-  },
-  {
-    id: "seed-3",
-    date: "2026-08-03",
-    amount: 20000,
-    categoryId: "transporte",
-    description: "Recarga Cívica",
-    createdAt: 1785758460000,
-  },
-  {
-    id: "seed-4",
-    date: "2026-08-04",
-    amount: 87600,
-    categoryId: "mercado",
-    description: "Carulla Oviedo",
-    createdAt: 1785844860000,
-  },
-  {
-    id: "seed-5",
-    date: "2026-08-05",
-    amount: 26900,
-    categoryId: "suscripciones",
-    description: "Netflix",
-    createdAt: 1785931260000,
-  },
-  {
-    id: "seed-6",
-    date: "2026-08-06",
-    amount: 15600,
-    categoryId: "restaurantes",
-    description: "Café Velvet",
-    createdAt: 1786017660000,
-  },
-  {
-    id: "seed-7",
-    date: "2026-08-07",
-    amount: 22000,
-    categoryId: "otros",
-    createdAt: 1786104060000,
-  },
-  {
-    id: "seed-8",
-    date: "2026-08-08",
-    amount: 96300,
-    categoryId: "mercado",
-    description: "La Mayorista",
-    createdAt: 1786190460000,
-  },
-  {
-    id: "seed-9",
-    date: "2026-08-09",
-    amount: 34500,
-    categoryId: "restaurantes",
-    description: "Salón Málaga",
-    createdAt: 1786276860000,
-  },
-  {
-    id: "seed-10",
-    date: "2026-08-10",
-    amount: 14200,
-    categoryId: "transporte",
-    description: "Uber a la oficina",
-    createdAt: 1786363260000,
-  },
-  {
-    id: "seed-11",
-    date: "2026-08-11",
-    amount: 41200,
-    categoryId: "mercado",
-    description: "D1 Laureles",
-    createdAt: 1786449660000,
-  },
-  {
-    id: "seed-12",
-    date: "2026-08-12",
-    amount: 52000,
-    categoryId: "restaurantes",
-    description: "Mondongo's",
-    createdAt: 1786536060000,
-  },
-  {
-    id: "seed-13",
-    date: "2026-08-14",
-    amount: 16900,
-    categoryId: "suscripciones",
-    description: "Spotify Premium",
-    createdAt: 1786708860000,
-  },
-  {
-    id: "seed-14",
-    date: "2026-08-15",
-    amount: 118700,
-    categoryId: "mercado",
-    description: "Carulla Oviedo",
-    createdAt: 1786795260000,
-  },
-  {
-    id: "seed-15",
-    date: "2026-08-16",
-    amount: 18300,
-    categoryId: "transporte",
-    description: "Uber al centro",
-    createdAt: 1786881660000,
-  },
-  {
-    id: "seed-16",
-    date: "2026-08-17",
-    amount: 45000,
-    categoryId: "transporte",
-    description: "Taxi al aeropuerto",
-    createdAt: 1786968060000,
-  },
-  {
-    id: "seed-17",
-    date: "2026-08-18",
-    amount: 16800,
-    categoryId: "restaurantes",
-    description: "Café Velvet",
-    createdAt: 1787054460000,
-  },
-  {
-    id: "seed-18",
-    date: "2026-08-19",
-    amount: 63800,
-    categoryId: "otros",
-    description: "Farmacia Cruz Verde",
-    createdAt: 1787140860000,
-  },
-  {
-    id: "seed-19",
-    date: "2026-08-21",
-    amount: 28400,
-    categoryId: "restaurantes",
-    description: "Al Alma",
-    createdAt: 1787313660000,
-  },
-  {
-    id: "seed-20",
-    date: "2026-08-22",
-    amount: 89900,
-    categoryId: "suscripciones",
-    description: "Claro Hogar",
-    createdAt: 1787400060000,
-  },
-  {
-    id: "seed-21",
-    date: "2026-08-23",
-    amount: 74500,
-    categoryId: "mercado",
-    description: "D1 Laureles",
-    createdAt: 1787486460000,
-  },
-  {
-    id: "seed-22",
-    date: "2026-08-24",
-    amount: 45000,
-    categoryId: "otros",
-    description: "Regalo cumpleaños",
-    createdAt: 1787572860000,
-  },
-  {
-    id: "seed-23",
-    date: "2026-08-25",
-    amount: 13800,
-    categoryId: "transporte",
-    description: "Uber a la oficina",
-    createdAt: 1787659260000,
-  },
-  {
-    id: "seed-24",
-    date: "2026-08-26",
-    amount: 12900,
-    categoryId: "suscripciones",
-    description: "iCloud",
-    createdAt: 1787745660000,
-  },
-  {
-    id: "seed-25",
-    date: "2026-08-27",
-    amount: 16600,
-    categoryId: "mercado",
-    description: "Éxito Poblado",
-    createdAt: 1787832060000,
-  },
-  {
-    id: "seed-26",
-    date: "2026-08-28",
-    amount: 61200,
-    categoryId: "restaurantes",
-    description: "Bao Bar",
-    createdAt: 1787918460000,
-  },
-  {
-    id: "seed-27",
-    date: "2026-08-29",
-    amount: 143900,
-    categoryId: "mercado",
-    description: "Éxito Poblado",
-    createdAt: 1788004860000,
-  },
-  {
-    id: "seed-28",
-    date: "2026-08-30",
-    amount: 45000,
-    categoryId: "otros",
-    description: "Peluquería",
-    createdAt: 1788091260000,
-  },
-  {
-    id: "seed-29",
-    date: "2026-08-31",
-    amount: 20000,
-    categoryId: "transporte",
-    description: "Recarga Cívica",
-    createdAt: 1788177660000,
-  },
-  {
-    id: "seed-30",
-    date: "2026-09-01",
-    amount: 63400,
-    categoryId: "mercado",
-    description: "La Mayorista",
-    createdAt: 1788264120000,
-  },
-  {
-    id: "seed-31",
-    date: "2026-09-01",
-    amount: 16900,
-    categoryId: "suscripciones",
-    description: "Spotify Premium",
-    createdAt: 1788264060000,
-  },
-  {
-    id: "seed-32",
-    date: "2026-09-02",
-    amount: 26900,
-    categoryId: "suscripciones",
-    description: "Netflix",
-    createdAt: 1788350580000,
-  },
-  {
-    id: "seed-33",
-    date: "2026-09-02",
-    amount: 42300,
-    categoryId: "restaurantes",
-    description: "Crepes & Waffles",
-    createdAt: 1788350520000,
-  },
-  {
-    id: "seed-34",
-    date: "2026-09-02",
-    amount: 20000,
-    categoryId: "transporte",
-    description: "Recarga Cívica",
-    createdAt: 1788350460000,
-  },
-  {
-    id: "seed-35",
-    date: "2026-09-03",
-    amount: 48500,
-    categoryId: "mercado",
-    description: "Éxito Poblado",
-    createdAt: 1788436980000,
-  },
-  {
-    id: "seed-36",
-    date: "2026-09-03",
-    amount: 12000,
-    categoryId: "transporte",
-    description: "Uber a la oficina",
-    createdAt: 1788436920000,
-  },
-  {
-    id: "seed-37",
-    date: "2026-09-03",
-    amount: 18900,
-    categoryId: "restaurantes",
-    description: "Café Velvet",
-    createdAt: 1788436860000,
-  },
+
+export interface SeedRow {
+  /** 0 = the month the account was created in, -1 = the month before it (8.2). */
+  monthOffset: 0 | -1;
+  /** Day of month, 1-31. The trigger clamps it to the month's real length. */
+  day: number;
+  /** Whole Colombian pesos. */
+  amount: number;
+  categoryId: CategoryId;
+  /** Absent where the mockup shows a bare category name instead (1.8). */
+  description?: string;
+  /**
+   * Orders the rows of a single day: the highest renders on top (1.3). It
+   * becomes a number of seconds added to the row's `created_at`.
+   */
+  sequence: number;
+}
+
+export const SEED_TEMPLATE: readonly SeedRow[] = [
+  { monthOffset: -1, day: 1, amount: 132400, categoryId: "mercado", description: "Éxito Poblado", sequence: 0 },
+  { monthOffset: -1, day: 2, amount: 38900, categoryId: "restaurantes", description: "Crepes & Waffles", sequence: 0 },
+  { monthOffset: -1, day: 3, amount: 20000, categoryId: "transporte", description: "Recarga Cívica", sequence: 0 },
+  { monthOffset: -1, day: 4, amount: 87600, categoryId: "mercado", description: "Carulla Oviedo", sequence: 0 },
+  { monthOffset: -1, day: 5, amount: 26900, categoryId: "suscripciones", description: "Netflix", sequence: 0 },
+  { monthOffset: -1, day: 6, amount: 15600, categoryId: "restaurantes", description: "Café Velvet", sequence: 0 },
+  { monthOffset: -1, day: 7, amount: 22000, categoryId: "otros", sequence: 0 },
+  { monthOffset: -1, day: 8, amount: 96300, categoryId: "mercado", description: "La Mayorista", sequence: 0 },
+  { monthOffset: -1, day: 9, amount: 34500, categoryId: "restaurantes", description: "Salón Málaga", sequence: 0 },
+  { monthOffset: -1, day: 10, amount: 14200, categoryId: "transporte", description: "Uber a la oficina", sequence: 0 },
+  { monthOffset: -1, day: 11, amount: 41200, categoryId: "mercado", description: "D1 Laureles", sequence: 0 },
+  { monthOffset: -1, day: 12, amount: 52000, categoryId: "restaurantes", description: "Mondongo's", sequence: 0 },
+  { monthOffset: -1, day: 14, amount: 16900, categoryId: "suscripciones", description: "Spotify Premium", sequence: 0 },
+  { monthOffset: -1, day: 15, amount: 118700, categoryId: "mercado", description: "Carulla Oviedo", sequence: 0 },
+  { monthOffset: -1, day: 16, amount: 18300, categoryId: "transporte", description: "Uber al centro", sequence: 0 },
+  { monthOffset: -1, day: 17, amount: 45000, categoryId: "transporte", description: "Taxi al aeropuerto", sequence: 0 },
+  { monthOffset: -1, day: 18, amount: 16800, categoryId: "restaurantes", description: "Café Velvet", sequence: 0 },
+  { monthOffset: -1, day: 19, amount: 63800, categoryId: "otros", description: "Farmacia Cruz Verde", sequence: 0 },
+  { monthOffset: -1, day: 21, amount: 28400, categoryId: "restaurantes", description: "Al Alma", sequence: 0 },
+  { monthOffset: -1, day: 22, amount: 89900, categoryId: "suscripciones", description: "Claro Hogar", sequence: 0 },
+  { monthOffset: -1, day: 23, amount: 74500, categoryId: "mercado", description: "D1 Laureles", sequence: 0 },
+  { monthOffset: -1, day: 24, amount: 45000, categoryId: "otros", description: "Regalo cumpleaños", sequence: 0 },
+  { monthOffset: -1, day: 25, amount: 13800, categoryId: "transporte", description: "Uber a la oficina", sequence: 0 },
+  { monthOffset: -1, day: 26, amount: 12900, categoryId: "suscripciones", description: "iCloud", sequence: 0 },
+  { monthOffset: -1, day: 27, amount: 16600, categoryId: "mercado", description: "Éxito Poblado", sequence: 0 },
+  { monthOffset: -1, day: 28, amount: 61200, categoryId: "restaurantes", description: "Bao Bar", sequence: 0 },
+  { monthOffset: -1, day: 29, amount: 143900, categoryId: "mercado", description: "Éxito Poblado", sequence: 0 },
+  { monthOffset: -1, day: 30, amount: 45000, categoryId: "otros", description: "Peluquería", sequence: 0 },
+  { monthOffset: -1, day: 31, amount: 20000, categoryId: "transporte", description: "Recarga Cívica", sequence: 0 },
+  { monthOffset: 0, day: 1, amount: 63400, categoryId: "mercado", description: "La Mayorista", sequence: 1 },
+  { monthOffset: 0, day: 1, amount: 16900, categoryId: "suscripciones", description: "Spotify Premium", sequence: 0 },
+  { monthOffset: 0, day: 2, amount: 26900, categoryId: "suscripciones", description: "Netflix", sequence: 2 },
+  { monthOffset: 0, day: 2, amount: 42300, categoryId: "restaurantes", description: "Crepes & Waffles", sequence: 1 },
+  { monthOffset: 0, day: 2, amount: 20000, categoryId: "transporte", description: "Recarga Cívica", sequence: 0 },
+  { monthOffset: 0, day: 3, amount: 48500, categoryId: "mercado", description: "Éxito Poblado", sequence: 2 },
+  { monthOffset: 0, day: 3, amount: 12000, categoryId: "transporte", description: "Uber a la oficina", sequence: 1 },
+  { monthOffset: 0, day: 3, amount: 18900, categoryId: "restaurantes", description: "Café Velvet", sequence: 0 },
 ];
 
-export const SEED_EXPENSES: Expense[] = SEED_ROWS.map((row) => ({
-  ...row,
-  currency: DEFAULT_CURRENCY,
-}));
+/**
+ * A SQL string literal. Doubling the quote is the whole of the escaping, and it
+ * is not optional: "Mondongo's" is in the table above, and without this the
+ * migration would not parse.
+ */
+function sqlString(value: string): string {
+  return `'${value.replace(/'/g, "''")}'`;
+}
 
-/** The book opens on the most recent month that has data. */
-export const SEED_MONTH: MonthKey = "2026-09";
+/**
+ * The `values` list the seed migration embeds, one row per line.
+ *
+ * Column order is (month_offset, day, amount, category_id, description,
+ * sequence) — it must match the migration's `insert`, and the test that compares
+ * this output to the committed file is what enforces that.
+ */
+export function renderSeedValues(rows: readonly SeedRow[] = SEED_TEMPLATE): string {
+  return rows
+    .map((row) => {
+      const description =
+        row.description === undefined ? "null" : sqlString(row.description);
+      return `    (${row.monthOffset}, ${row.day}, ${row.amount}, ${sqlString(
+        row.categoryId,
+      )}, ${description}, ${row.sequence})`;
+    })
+    .join(",\n");
+}

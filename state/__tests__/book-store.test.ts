@@ -6,11 +6,12 @@ import { describe, expect, it } from "vitest";
 import { monthKeyOf } from "@/lib/domain/dates";
 import { monthTotal } from "@/lib/domain/summary";
 import type { ExpenseDraft } from "@/lib/domain/types";
-import { SEED_EXPENSES, SEED_MONTH } from "@/lib/seed";
+import { seededBook } from "@/lib/domain/__tests__/fixtures";
 import { bookReducer, createInitialState } from "@/state/book-store";
 
 const TODAY = "2026-09-03";
-const initial = () => createInitialState(TODAY);
+const SEEDED = seededBook();
+const initial = () => createInitialState(TODAY, seededBook());
 
 const draft = (over: Partial<ExpenseDraft> = {}): ExpenseDraft => ({
   amount: 48_500,
@@ -22,11 +23,11 @@ const draft = (over: Partial<ExpenseDraft> = {}): ExpenseDraft => ({
 describe("initial state (1.1, 10.1)", () => {
   it("opens on the seeded month with no filter and no sheet", () => {
     const s = initial();
-    expect(s.viewedMonth).toBe(SEED_MONTH);
+    expect(s.viewedMonth).toBe("2026-09");
     expect(s.filter).toBe("todas");
     expect(s.sheet).toEqual({ mode: "closed" });
     expect(s.pendingDeletion).toBeNull();
-    expect(s.expenses).toHaveLength(SEED_EXPENSES.length);
+    expect(s.expenses).toHaveLength(SEEDED.length);
     expect(s.today).toBe(TODAY);
   });
 });
@@ -76,14 +77,14 @@ describe("register (4.6, 2.13)", () => {
     const open = bookReducer(initial(), { type: "openSheet", sheet: { mode: "create" } });
     const s = bookReducer(open, { type: "register", draft: draft() });
 
-    expect(s.expenses).toHaveLength(SEED_EXPENSES.length + 1);
+    expect(s.expenses).toHaveLength(SEEDED.length + 1);
     expect(s.sheet).toEqual({ mode: "closed" });
 
     const added = s.expenses.at(-1)!;
     expect(added.id).toBeTruthy();
     expect(new Set(s.expenses.map((e) => e.id)).size).toBe(s.expenses.length);
     expect(added.amount).toBe(48_500);
-    expect(monthTotal(s.expenses, "2026-09")).toBe(monthTotal(SEED_EXPENSES, "2026-09") + 48_500);
+    expect(monthTotal(s.expenses, "2026-09")).toBe(monthTotal(SEEDED, "2026-09") + 48_500);
   });
 
   it("never stores an empty description", () => {
@@ -98,7 +99,7 @@ describe("register (4.6, 2.13)", () => {
 });
 
 describe("edit (5.3, 5.4)", () => {
-  const target = SEED_EXPENSES.find((e) => e.description === "Éxito Poblado" && e.date === "2026-09-03")!;
+  const target = SEEDED.find((e) => e.description === "Éxito Poblado" && e.date === "2026-09-03")!;
 
   it("updates the expense in place, keeping its id and position", () => {
     const s = bookReducer(initial(), {
@@ -109,8 +110,8 @@ describe("edit (5.3, 5.4)", () => {
     const edited = s.expenses.find((e) => e.id === target.id)!;
     expect(edited.amount).toBe(60_000);
     expect(edited.categoryId).toBe("otros");
-    expect(s.expenses).toHaveLength(SEED_EXPENSES.length);
-    expect(s.expenses.indexOf(edited)).toBe(SEED_EXPENSES.indexOf(target));
+    expect(s.expenses).toHaveLength(SEEDED.length);
+    expect(s.expenses.indexOf(edited)).toBe(SEEDED.indexOf(target));
   });
 
   it("navigates the book when the edit moves the expense to another month", () => {

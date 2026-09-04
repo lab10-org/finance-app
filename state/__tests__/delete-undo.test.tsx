@@ -2,7 +2,7 @@ import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { groupByDay } from "@/lib/domain/summary";
-import { SEED_EXPENSES } from "@/lib/seed";
+import { seededBook } from "@/lib/domain/__tests__/fixtures";
 import {
   BookProvider,
   UNDO_WINDOW_MS,
@@ -11,9 +11,10 @@ import {
   useBook,
 } from "@/state/book-store";
 
+const SEEDED = seededBook();
 const TODAY = "2026-09-03";
-const initial = () => createInitialState(TODAY);
-const target = SEED_EXPENSES.find((e) => e.description === "Uber a la oficina" && e.date === "2026-09-03")!;
+const initial = () => createInitialState(TODAY, seededBook());
+const target = SEEDED.find((e) => e.description === "Uber a la oficina" && e.date === "2026-09-03")!;
 
 describe("delete (6.1, 6.2)", () => {
   it("removes the expense and holds it in the undo buffer", () => {
@@ -46,7 +47,7 @@ describe("undo (6.3)", () => {
 
 describe("a second delete while one is pending (6.5)", () => {
   it("finalises the first and offers undo for the second", () => {
-    const other = SEED_EXPENSES.find((e) => e.description === "Café Velvet" && e.date === "2026-09-03")!;
+    const other = SEEDED.find((e) => e.description === "Café Velvet" && e.date === "2026-09-03")!;
     const first = bookReducer(initial(), { type: "delete", expenseId: target.id });
     const second = bookReducer(first, { type: "delete", expenseId: other.id });
 
@@ -59,7 +60,7 @@ describe("a second delete while one is pending (6.5)", () => {
 
 describe("deleting the filtered category's last expense (7.7)", () => {
   it("falls back to Todas", () => {
-    let s = createInitialState(TODAY);
+    let s = createInitialState(TODAY, seededBook());
     s = bookReducer(s, { type: "setMonth", month: "2026-08" });
     s = bookReducer(s, { type: "setFilter", filter: "otros" });
 
@@ -90,7 +91,7 @@ describe("the 5-second window (6.4)", () => {
 
   it("finalises the deletion by itself after the window closes", () => {
     render(
-      <BookProvider today={TODAY}>
+      <BookProvider today={TODAY} expenses={seededBook()}>
         <Probe />
       </BookProvider>,
     );

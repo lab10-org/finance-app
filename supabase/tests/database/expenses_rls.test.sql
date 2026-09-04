@@ -8,6 +8,13 @@ values
   ('11111111-1111-1111-1111-111111111111', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ana@example.com'),
   ('22222222-2222-2222-2222-222222222222', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'beto@example.com');
 
+-- Creating an account seeds it with 37 expenses (Requirement 8), which would
+-- drown every count below. The trigger cannot be disabled from here — the test
+-- role does not own `auth.users` — so the rows are cleared instead, as postgres,
+-- before any impersonation begins. `seed_new_account.test.sql` is where the
+-- seeding itself is asserted.
+delete from public.expenses;
+
 -- Impersonating an account means the `authenticated` role plus the JWT claims
 -- that `auth.uid()` reads. Both are needed: the role is what RLS applies to,
 -- the claims are what the policies compare against.

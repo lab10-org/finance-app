@@ -19,7 +19,6 @@ import type {
   IsoDate,
   MonthKey,
 } from "@/lib/domain/types";
-import { SEED_EXPENSES, SEED_MONTH } from "@/lib/seed";
 
 export type SheetState =
   | { mode: "closed" }
@@ -50,10 +49,18 @@ export type BookAction =
 /** How long a deleted expense stays recoverable (6.4). */
 export const UNDO_WINDOW_MS = 5000;
 
-export function createInitialState(today: IsoDate = todayIso()): BookState {
+/*
+ * The book no longer starts from a seed file: expenses come from the database,
+ * and a new account is seeded there (Requirement 8). Until T7 hands the store
+ * the rows the server read, it starts empty and opens on the current month.
+ */
+export function createInitialState(
+  today: IsoDate = todayIso(),
+  expenses: Expense[] = [],
+): BookState {
   return {
-    expenses: [...SEED_EXPENSES],
-    viewedMonth: SEED_MONTH,
+    expenses,
+    viewedMonth: monthKeyOf(today),
     filter: "todas",
     sheet: { mode: "closed" },
     pendingDeletion: null,
@@ -190,14 +197,17 @@ const BookContext = createContext<{
 export function BookProvider({
   children,
   today,
+  expenses,
 }: {
   children: ReactNode;
   today?: IsoDate;
+  /** The rows the server read. T7 supplies them; tests supply their own. */
+  expenses?: Expense[];
 }) {
   const [state, dispatch] = useReducer(
     bookReducer,
-    today,
-    (t) => createInitialState(t ?? todayIso()),
+    { today, expenses },
+    (init) => createInitialState(init.today ?? todayIso(), init.expenses ?? []),
   );
 
   /*

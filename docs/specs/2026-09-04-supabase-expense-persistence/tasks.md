@@ -52,7 +52,7 @@ for the local stack, and Docker must be running for them.
 - [x] T1 — An expense carries an amount and a currency
 - [x] T2 — `uuid_generate_v7()` and its bit layout
 - [x] T3 — The `expenses` table, its index and its ownership rules
-- [ ] T4 — The seeded book as a relative template and a trigger
+- [x] T4 — The seeded book as a relative template and a trigger
 - [ ] T5 — The row mapper and the unknown category
 - [ ] T6 — The `ExpenseRepository` seam and the widened import guard
 - [ ] T7 — The window read on the server, handed down as props
@@ -310,7 +310,7 @@ what `float` could not.
 
 ### T4 — The seeded book as a relative template and a trigger
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 1.3, 8.1, 8.2, 8.3, 8.4, 8.5, 8.6, 8.7, 12.1 — `lib/seed.ts`,
   `supabase/migrations/<ts>_seed_new_account.sql`
 - **Depends on:** T1, T3
@@ -341,7 +341,44 @@ what `float` could not.
 
 **Decision log**
 
+- The `values` list embedded in the migration is produced by *running*
+  `renderSeedValues()` (`node --experimental-strip-types`), not by transcribing
+  it. The vitest assertion that the render appears verbatim in the committed file
+  then holds by construction, and stays a real check for every later edit.
+- The escaping matters more than it looks: `Mondongo's` is row 12 of the
+  template, and without doubling the quote the migration does not parse at all.
+  There is a unit test for it.
+- **The day clamp is load-bearing, not defensive.** The template contains a day
+  31, and an account created in March has February as its previous month. pgTAP
+  now asserts that such an account still gets all 37 rows and that February's
+  highest day is the 28th.
+- **Two existing pgTAP files had to be isolated from the trigger.** Once creating
+  an account seeds 37 expenses, the RLS and constraint tests — which create
+  accounts and then count rows — were counting 39. The trigger cannot be disabled
+  from a test (`must be owner of table users`; `auth.users` belongs to
+  `supabase_auth_admin`), so both files now `delete from public.expenses` as
+  postgres before impersonating anyone.
+- **8.6 is tested by breaking the seed on purpose**: a check constraint no amount
+  can satisfy is added, an account is created, and the assertions are that the
+  account exists and its book is empty. An untested `exception` block is a guess,
+  and this one is a promise about the worst day.
+- `seededBook()` in `lib/domain/__tests__/fixtures.ts` expands the template to
+  absolute dates, mirroring the trigger's clamp and ordering. It replaces
+  `SEED_EXPENSES` in the five prototype tests that imported it, so they keep
+  asserting the same behaviour against the same numbers.
+- `MonthHeader`'s title got a `data-testid`. With an empty book the month now
+  appears twice on screen — in the header and in `EmptyMonth` — and
+  `session-guard.test.tsx` matched both.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` **359 passing across 41
+files**, `supabase test db` **45/45 pgTAP assertions across five files**. A new
+account gets 37 expenses over its creation month and the one before, the previous
+month totals exactly the mockup's `$1.412.300`, the rows are indistinguishable
+from recorded ones, an account created in March survives February, an account
+whose seed fails still exists with an empty book, and an account that predates
+the trigger has no expenses at all.
 
 ### T5 — The row mapper and the unknown category
 

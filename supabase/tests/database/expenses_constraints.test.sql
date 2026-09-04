@@ -4,6 +4,11 @@ select plan(13);
 insert into auth.users (id, instance_id, aud, role, email)
 values ('33333333-3333-3333-3333-333333333333', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'caro@example.com');
 
+-- Creating the account seeded it with 37 expenses (Requirement 8), asserted in
+-- `seed_new_account.test.sql`. Here they would only get in the way of the counts
+-- below, so they are cleared as postgres before the role changes.
+delete from public.expenses;
+
 set local role authenticated;
 select set_config('request.jwt.claims',
   '{"sub":"33333333-3333-3333-3333-333333333333","role":"authenticated"}', true);

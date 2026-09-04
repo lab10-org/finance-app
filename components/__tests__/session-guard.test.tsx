@@ -84,15 +84,15 @@ describe("a second account on the same device (6.3)", () => {
     const user = userEvent.setup();
     const { rerender } = render(<BookApp user={A} />);
 
-    const seededMonth = screen.getByText(/^\w+ \d{4}$/).textContent as string;
+    const seededMonth = screen.getByTestId("month-title").textContent as string;
 
     // Move the first account off its seeded month, so "inherited" and
     // "re-initialised" are visibly different states.
     await user.click(screen.getByRole("button", { name: /mes anterior/i }));
-    expect(screen.queryByText(seededMonth)).not.toBeInTheDocument();
+    expect(screen.getByTestId("month-title").textContent).not.toBe(seededMonth);
 
     rerender(<BookApp user={B} />);
 
-    expect(screen.getByText(seededMonth)).toBeInTheDocument();
+    expect(screen.getByTestId("month-title").textContent).toBe(seededMonth);
   });
 });
