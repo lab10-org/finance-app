@@ -51,8 +51,8 @@ more later than the checkmark next to it.
 - [x] T9 — "La entrada": layout, tokens and copy at 390px
 - [x] T10 — The route decision and `proxy.ts`
 - [x] T11 — The server session and the gated routes
-- [ ] T12 — Session context and the session guard
-- [ ] T13 — `"Cerrar sesión"` in the book header
+- [x] T12 — Session context and the session guard
+- [x] T13 — `"Cerrar sesión"` in the book header
 - [ ] T14 — Document the local stack and run the manual pass
 
 ## Requirements coverage
@@ -631,7 +631,7 @@ no `ssr: false` error is raised from a Server Component.
 
 ### T12 — Session context and the session guard
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 4.5, 5.5, 5.6, 6.3 — `state/session-context.tsx`,
   `components/book/SessionGuard.tsx`, `components/book/BookApp.tsx`
 - **Depends on:** T11
@@ -658,11 +658,33 @@ no `ssr: false` error is raised from a Server Component.
 
 **Decision log**
 
+- **Bug caught by the 6.3 test.** The first `subscribeToSessionEnd` treated a
+  null session as an ending. Supabase emits `INITIAL_SESSION` the moment you
+  subscribe — with a null session when there is none — so the book blanked
+  itself on mount. Narrowed to `event === "SIGNED_OUT"`, which also covers a
+  revoked or unrefreshable token, and `lib/auth/__tests__/session-events.test.ts`
+  now pins the event filter.
+- **Design adjusted.** `useRouter` throws outside an app-router context, so
+  `BookApp` would have been unrenderable in jsdom. The router moved up to
+  `BookMount` and `BookApp` takes an `onSignedOut` callback. `BookApp` is now
+  free of both routing and Supabase.
+- The Supabase subscription adapter lives in `lib/auth/session-events.ts`, not
+  beside `SessionGuard`, because T3's whitelist allows a Supabase import only
+  from the auth directories. The constraint held rather than being widened.
+- `vitest.setup.ts` now supplies the two `NEXT_PUBLIC_SUPABASE_*` variables.
+  Nothing in the suite talks to a network, but a component that builds a client
+  on mount still needs the environment contract satisfied.
+
 **Outcome**
+
+Done. `state/session-context.tsx`, `components/book/SessionGuard.tsx`,
+`lib/auth/session-events.ts` and the rewritten `BookApp`, with 13 tests.
+`useSession()` returns `null` outside a provider rather than throwing, which is
+what keeps every v1 test green.
 
 ### T13 — `"Cerrar sesión"` in the book header
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 6.1, 6.2, 6.3, 6.4 — `components/book/AccountControl.tsx`,
   `components/book/ConfirmSignOut.tsx`, `components/book/MonthHeader.tsx`,
   `components/book/BookScreen.tsx`
@@ -690,7 +712,22 @@ no `ssr: false` error is raised from a Server Component.
 
 **Decision log**
 
+- `MonthHeader`'s `action` prop is optional and uninterpreted, so
+  `month-header.test.tsx` renders unchanged and still passes.
+- `AccountControl` returns `null` without a session. That single line is what
+  lets every v1 test go on rendering `BookScreen` bare.
+- The confirming button reads `"Sí, cerrar sesión"` rather than repeating the
+  header's `"Cerrar sesión"`: two controls with the same accessible name would
+  be ambiguous to a screen reader and to `getByRole`.
+- `session.signOut()` is called with a `.catch(() => {})`. It never rejects in
+  production — the client falls back to a local sign-out — but an unhandled
+  rejection here would leave the person inside a book they asked to leave.
+
 **Outcome**
+
+Done. `AccountControl.tsx`, `ConfirmSignOut.tsx`, their stylesheets, the
+`action` slot on `MonthHeader` and the wiring from `BookScreen`, with 7 tests.
+The whole v1 suite still passes untouched.
 
 ### T14 — Document the local stack and run the manual pass
 

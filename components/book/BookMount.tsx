@@ -1,7 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
+import { useCallback } from "react";
 
+import { ENTRADA_PATH } from "@/lib/auth/route-decision";
 import type { SessionUser } from "@/lib/auth/types";
 
 /*
@@ -15,5 +18,13 @@ import type { SessionUser } from "@/lib/auth/types";
 const BookApp = dynamic(() => import("./BookApp"), { ssr: false });
 
 export default function BookMount({ user }: { user: SessionUser }) {
-  return <BookApp user={user} />;
+  const router = useRouter();
+
+  // The router lives here rather than in BookApp so that BookApp stays
+  // renderable in a plain jsdom test, with no app-router context to provide.
+  const goToEntrada = useCallback(() => {
+    router.replace(ENTRADA_PATH);
+  }, [router]);
+
+  return <BookApp user={user} onSignedOut={goToEntrada} />;
 }

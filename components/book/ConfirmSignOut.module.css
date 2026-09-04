@@ -1,0 +1,60 @@
+/* Follows ExpenseSheet: a native <dialog>, centred, on the surface token. */
+
+.dialog {
+  width: calc(100% - 48px);
+  max-width: 320px;
+  padding: var(--screen-pad);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+.dialog::backdrop {
+  background: var(--text-primary);
+  opacity: 0.28;
+}
+
+.question {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.detail {
+  margin: 0 0 20px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.address {
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.cancel {
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.confirm {
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--surface);
+  background: var(--accent);
+  border-radius: 12px;
+  cursor: pointer;
+}

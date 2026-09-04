@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { ReactNode } from "react";
 
 import { formatMonthTitle } from "@/lib/format";
 import type { MonthKey } from "@/lib/domain/types";
@@ -12,9 +13,20 @@ export interface MonthHeaderProps {
   canGoForward: boolean;
   onPrev: () => void;
   onNext: () => void;
+  /**
+   * The right-hand slot the v1 search icon vacated (6.1). Optional and
+   * uninterpreted, so the existing month-header tests keep rendering unchanged.
+   */
+  action?: ReactNode;
 }
 
-export function MonthHeader({ month, canGoForward, onPrev, onNext }: MonthHeaderProps) {
+export function MonthHeader({
+  month,
+  canGoForward,
+  onPrev,
+  onNext,
+  action,
+}: MonthHeaderProps) {
   return (
     <div className={styles.nav}>
       <div className={styles.selector}>
@@ -32,7 +44,8 @@ export function MonthHeader({ month, canGoForward, onPrev, onNext }: MonthHeader
           <ChevronRight size={15} strokeWidth={2} aria-hidden />
         </button>
       </div>
-      {/* No search control: search is out of scope for v1 (8.7). */}
+      {/* Where the v1 search control used to be (8.7); now the account slot. */}
+      {action}
     </div>
   );
 }

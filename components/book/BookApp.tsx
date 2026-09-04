@@ -1,21 +1,62 @@
 "use client";
 
+import { useMemo } from "react";
+
+import { createSupabaseAuthClient } from "@/lib/auth/auth-client";
+import { subscribeToSessionEnd } from "@/lib/auth/session-events";
 import type { SessionUser } from "@/lib/auth/types";
+import { SessionProvider } from "@/state/session-context";
 import { BookProvider } from "@/state/book-store";
 
 import BookScreen from "./BookScreen";
+import { SessionGuard } from "./SessionGuard";
+
+export interface BookAppProps {
+  user: SessionUser;
+  /**
+   * Where to go once there is no session. Supplied by `BookMount`, which owns
+   * the router — keeping `useRouter` out of here is what lets this component
+   * be rendered in a plain jsdom test.
+   */
+  onSignedOut?: () => void;
+  /** Injected in tests; production uses the real Supabase subscription. */
+  subscribe?: (onSessionEnded: () => void) => () => void;
+}
 
 /**
- * The mounted application: the store and the book together. Kept as one
- * component so nothing can mount the screen without its provider.
- *
- * `BookProvider` is keyed by the account, so a different person signing in on
- * the same device can never inherit the previous one's reducer state (6.3).
+ * The mounted application: the session, its guard and the store together. Kept
+ * as one component so nothing can mount the screen without its providers.
  */
-export default function BookApp({ user }: { user: SessionUser }) {
+export default function BookApp({
+  user,
+  onSignedOut = () => {},
+  subscribe = subscribeToSessionEnd,
+}: BookAppProps) {
+  const value = useMemo(
+    () => ({
+      user,
+      signOut: async () => {
+        // `createSupabaseAuthClient().signOut()` never throws and always drops
+        // the local credential, so this leaves whatever the server answered
+        // (6.4). The guard's subscription handles the unmount.
+        await createSupabaseAuthClient().signOut();
+        onSignedOut();
+      },
+    }),
+    [user, onSignedOut],
+  );
+
   return (
-    <BookProvider key={user.id}>
-      <BookScreen />
-    </BookProvider>
+    <SessionProvider value={value}>
+      <SessionGuard subscribe={subscribe} onSessionEnded={onSignedOut}>
+        {/*
+          Keyed by the account, so a different person signing in on this device
+          can never inherit the previous one's reducer state (6.3).
+        */}
+        <BookProvider key={user.id}>
+          <BookScreen />
+        </BookProvider>
+      </SessionGuard>
+    </SessionProvider>
   );
 }
