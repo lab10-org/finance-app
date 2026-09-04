@@ -59,7 +59,7 @@ for the local stack, and Docker must be running for them.
 - [x] T8 — The store keeps months, statuses and navigation
 - [x] T9 — Optimistic registration and the adoption of the real id
 - [x] T10 — Editing, deleting and undoing reach the database
-- [ ] T11 — Re-reading the window and merging it with what is in flight
+- [x] T11 — Re-reading the window and merging it with what is in flight
 - [ ] T12 — What the book shows while loading, and when a write fails
 - [ ] T13 — Document the migrations and run the manual pass
 
@@ -731,7 +731,7 @@ the expense to the book; and a failed deletion offers a retry that succeeds.
 
 ### T11 — Re-reading the window and merging it with what is in flight
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 9.1, 9.2, 9.3, 9.4, 9.5 — `reconcile`,
   `state/book-actions.ts#refresh`
 - **Depends on:** T10
@@ -753,7 +753,30 @@ the expense to the book; and a failed deletion offers a retry that succeeds.
 
 **Decision log**
 
+- **9.4 was a real bug until this task, and the test caught it red.** Before the
+  fix, `monthLoaded` replaced a month's expenses outright, so a refresh landing
+  while an insert was in flight made the row the user had just registered vanish
+  — and reappear seconds later when the write returned. The merge now keeps rows
+  that still carry a provisional id: the database cannot know about them yet, by
+  definition.
+- The merge keys on the provisional id rather than on a timestamp or a value
+  comparison. A `local-` id means exactly "this row has a write in flight", which
+  is precisely the set 9.4 is about — no heuristics involved.
+- **`visibilitychange`, not `focus`.** Focus fires when the user clicks back into
+  the window from another app on the same screen, which is not a moment the data
+  could have changed elsewhere; on a desktop that would refetch constantly.
+  Visibility is the signal that the tab was actually away.
+- The callback lives in a ref so a re-render does not tear the listener down and
+  reinstall it with a stale closure. There is a test for that specifically.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` **477 passing across 50
+files**. Ten new assertions: the refresh fires on becoming visible and not on
+being hidden, stops on unmount, and always calls the current callback; a re-read
+takes up a change made elsewhere, keeps the book it has when it fails, and — the
+three that were red first — keeps an in-flight expense visible, keeps it in the
+total, and leaves exactly one row once its write lands.
 
 ### T12 — What the book shows while loading, and when a write fails
 

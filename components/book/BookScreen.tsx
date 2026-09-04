@@ -14,6 +14,7 @@ import {
 } from "@/lib/domain/summary";
 import { useBookActions } from "@/state/book-actions";
 import { useBook, windowExpenses } from "@/state/book-store";
+import { useRefreshOnVisible } from "@/state/use-refresh-on-visible";
 
 import { AccountControl } from "./AccountControl";
 import { MonthHeader } from "./MonthHeader";
@@ -30,6 +31,10 @@ export default function BookScreen() {
   const context = useBook();
   const { state, dispatch } = context;
   const actions = useBookActions(context);
+
+  // The book catches up when the tab comes back (9.2). What is still in flight
+  // survives the merge, so this cannot undo something the user just did (9.4).
+  useRefreshOnVisible(() => void actions.refresh());
   const { viewedMonth, filter, today, sheet: sheetState } = state;
   // The window flattened: every pure function below still sees a plain list.
   const expenses = windowExpenses(state, viewedMonth);

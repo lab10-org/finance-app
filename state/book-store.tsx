@@ -273,9 +273,18 @@ export function bookReducer(state: BookState, action: BookAction): BookState {
     case "monthLoaded": {
       const months = { ...state.months };
       for (const key of action.months) {
+        /*
+         * A row still carrying a provisional id has a write in flight, so the
+         * database it was just read from does not know about it yet. Dropping it
+         * here would make an expense the user already saw vanish and come back
+         * — which is what 9.4 forbids. It survives the merge and is adopted, not
+         * duplicated, when its own write returns.
+         */
+        const inFlight = (months[key]?.expenses ?? []).filter((e) => isLocalId(e.id));
+
         months[key] = {
           status: "loaded",
-          expenses: action.expenses.filter((e) => monthKeyOf(e.date) === key),
+          expenses: [...action.expenses.filter((e) => monthKeyOf(e.date) === key), ...inFlight],
         };
       }
       return { ...state, months };
