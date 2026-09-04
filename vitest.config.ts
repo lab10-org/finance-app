@@ -15,6 +15,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
     include: ["**/__tests__/**/*.test.{ts,tsx}"],
-    exclude: ["node_modules/**", ".next/**"],
+    /*
+     * `**` before `node_modules`, not just the top-level one: a git worktree
+     * under `.claude/worktrees/` carries its own installed dependencies, and the
+     * top-level pattern does not reach them — the suite then tries to run the
+     * `__tests__` folders shipped inside other people's packages.
+     */
+    exclude: ["**/node_modules/**", "**/.next/**", ".claude/worktrees/**"],
   },
 });
