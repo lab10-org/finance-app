@@ -74,10 +74,22 @@ archivos.
 Esta fase la conduce la skill **`/specify`** (método Requirements-First): toma
 la decisión que salió de `/brainstorming` y la formaliza en `requirements.md`
 → `design.md` → `tasks.md`, dentro de
-`docs/specs/<YYYY-MM-DD>-<feature-slug>/`, con una parada de aprobación del
-usuario entre cada documento. La Implementación no arranca hasta que
-`tasks.md` esté aprobado. Los tres documentos se escriben en inglés; al
-usuario se le sigue hablando en español.
+`docs/specs/<YYYY-MM-DD>-<feature-slug>/`. Los tres documentos se escriben en
+inglés; al usuario se le sigue hablando en español.
+
+El trabajo se reparte en dos tramos, con **un gate humano en cada uno**:
+
+- `/specify` escribe `requirements.md` y **para**. No sigue hasta que el
+  usuario apruebe.
+- Aprobados los requirements, el subagente **`spec-planner`** produce
+  `design.md` y `tasks.md` en una sola corrida. Se revisan juntos.
+
+El planner corre en contexto propio: lee los requirements y el código que ya
+existe sin arrastrar la negociación de los requirements, que es justo lo que
+hace que diseñe contra el documento escrito y no contra lo que "se entendía"
+en el chat. Nunca toca `requirements.md` ni escribe código — si encuentra un
+hueco, lo reporta y la corrección se hace con el usuario. La Implementación no
+arranca hasta que `tasks.md` esté aprobado.
 
 ### 3. Implementación
 

@@ -4,8 +4,9 @@ description: >-
   Requirements-First feature specification. Produces three reviewable documents,
   in order: `requirements.md` (numbered EARS acceptance criteria) → `design.md`
   (technical architecture) → `tasks.md` (an ordered TDD task list that doubles as
-  the execution log) — each one written only after the user has approved the
-  previous one. Use this WHENEVER the user wants to define, spec, plan, or scope a
+  the execution log). This skill writes the requirements and stops for the user's
+  approval; the `spec-planner` subagent then produces the design and the tasks in
+  one pass. Use this WHENEVER the user wants to define, spec, plan, or scope a
   new feature. English trigger phrases: "spec this out", "write requirements",
   "before we build", "scope this feature", "write the spec first". Spanish trigger
   phrases: "escribir el spec", "definir la feature", "escribamos los requisitos",
@@ -28,6 +29,10 @@ this skill is three artifacts:
 
 The first two define *what* and *how*; the third turns the design into work that
 can be verified one step at a time.
+
+**This skill writes the first one directly.** The other two are produced in a
+single pass by the **`spec-planner` subagent**, once the user has approved the
+requirements — see *The workflow* below.
 
 **Why requirements come first.** Pinning down the behavior before the design
 keeps the design honest: every technical decision has to trace back to a
@@ -73,14 +78,36 @@ docs/specs/<YYYY-MM-DD>-<feature-slug>/
   `docs/specs/2026-09-03-quick-expense-entry/` and
   `docs/specs/2026-09-03-monthly-category-breakdown/`.
 
-## The workflow — and the approval gate
+## The workflow — one human gate, then delegation
 
-The documents are produced in order, with a **hard stop for human approval
-between phases**. This is not ceremony, it is economics: requirements are the
+The documents are produced in order, with a **hard stop for human approval on
+the requirements**. This is not ceremony, it is economics: requirements are the
 cheapest thing in the stack to change, and every later decision is stacked on
 top of them. Fixing the behavior now costs a paragraph; fixing it after a design
-— or a task list — has been built on the wrong behavior means throwing away the
-design and the task list too.
+— and a task list — has been built on the wrong behavior means throwing away
+both.
+
+Once the requirements are approved, `design.md` and `tasks.md` are produced in
+**one pass by the `spec-planner` subagent**, and reviewed together.
+
+```
+/brainstorming  →  decisión aprobada
+        ↓
+/specify        →  requirements.md
+        ↓        ▲ GATE humano — el usuario aprueba
+spec-planner    →  design.md + tasks.md
+        ↓        ▲ GATE humano — el usuario aprueba
+Implementación  →  una tarea a la vez, top to bottom
+```
+
+**Why the planner runs separately.** Writing the design is a research-heavy job:
+it means reading the existing modules, the test setup and the mockups to design
+against the code that is actually there. Doing that in this conversation would
+bury the requirements discussion under file dumps. The subagent does it in its
+own context and returns only the outcome. It also runs **without having watched
+the requirements get negotiated**, which is the point: it designs against the
+document as written, so a requirement that only made sense to whoever was in the
+room gets caught here instead of in review.
 
 ### Coming from `/brainstorming`?
 
@@ -91,7 +118,7 @@ The work here is to *formalize* what was decided, not to reopen it — re-asking
 settled questions wastes the user's time and quietly invites the answers to
 drift from what was agreed.
 
-### Phase 1 — Requirements (steps 1-3)
+### Phase 1 — Requirements (this skill does it directly)
 
 1. **Understand enough to write.** If the idea is vague, ask a few sharp
    questions *first*: who the user is, what triggers the feature, what success
@@ -105,51 +132,56 @@ drift from what was agreed.
    feature folder and fill it in using EARS notation (see below). Number every
    requirement and every criterion.
 3. **Stop and ask for review.** Present the requirements, say explicitly that
-   the design comes next and that you are waiting for a go-ahead or changes.
-   **Do not create `design.md` yet.** Iterate on the requirements until the user
-   approves them.
+   the design and the tasks come next and that you are waiting for a go-ahead or
+   changes. **Do not create `design.md` or `tasks.md`, and do not call the
+   planner.** Iterate until the user approves.
 
-### Phase 2 — Design (steps 4-6)
+### Phase 2 — Design and tasks (delegated to `spec-planner`)
 
-4. **Only after explicit approval**, copy `assets/design-template.md` into the
-   feature folder as `design.md`.
-5. **Trace everything.** Every component, data model and error path must trace
-   to a numbered acceptance criterion. If the design uncovers a gap in the
-   requirements — a case nobody specified — **go back and update
-   `requirements.md`**, and tell the user. Designing over the hole in silence
-   buries a product decision inside a technical document, where no reviewer is
-   looking for it.
-6. **Present and stop until approval** before decomposing anything into tasks.
+4. **Only after explicit approval**, hand off to the `spec-planner` subagent.
+   Invoke it with:
+   - the **absolute path of the feature folder** — it writes only in there;
+   - any **constraint settled in chat that is not in `requirements.md`** —
+     typically stack or persistence decisions that came out of
+     `/brainstorming`. A constraint you keep to yourself is one the planner
+     will decide differently.
 
-### Phase 3 — Tasks (steps 7-10)
+   Do not paraphrase the requirements into the prompt: the planner reads
+   `requirements.md` itself, and a paraphrase would compete with it.
 
-7. **Only after the design is approved**, copy `assets/tasks-template.md` into
-   the feature folder as `tasks.md`.
-8. **Fill it in here**, following the contract below.
-9. **Present it for approval.** Then implementation runs one task at a time,
-   top to bottom.
-10. **Keep the three documents synchronized.** If implementation proves the
-    design wrong, update `design.md` and record it in the Decision log of the
-    affected task — an out-of-date design is worse than no design, because it is
-    still trusted.
+5. **Relay its report and present both documents for approval.** The planner
+   returns in Spanish; pass on what it says without dressing it up. Two parts of
+   its report need the user's attention explicitly, because they are decisions,
+   not status:
+   - **Supuestos que necesitan confirmación** — calls the planner made because
+     the requirements did not settle them.
+   - **Huecos en los requirements** — gaps or contradictions it found. The
+     planner never edits `requirements.md`; that is deliberate, because it sits
+     behind a human gate. If a gap is real, **update `requirements.md` with the
+     user, then re-run the planner** so the design and the tasks are re-derived
+     rather than patched by hand.
 
-**The `tasks.md` contract:**
+6. **Review before handing it to the user.** Skim for the three failures that
+   make a plan unusable, and send it back to the planner if you find one:
+   - a criterion missing from the `Requirements coverage` table;
+   - a `Verify` step citing a script that is not in `package.json`;
+   - a `<...>` placeholder left in either document.
 
-- **One TDD cycle per task** — red → green → verify — sized so a task can be
-  finished and verified in one sitting. A task too big to verify is a task whose
-  failure you find late.
-- **Every task is traced** to the design components it builds and the
-  requirement criteria it satisfies.
-- **A `Requirements coverage` table** where *every* acceptance criterion maps to
-  at least one task. A criterion with no task is a gap: close it before
-  implementing, because it is much cheaper to notice here than in review.
-- **`Decision log` and `Outcome` start empty.** They are filled in *during*
-  execution, and that is exactly what makes the file a log instead of a
-  checklist: the reasoning behind a non-obvious choice is worth more later than
-  the checkmark.
-- If requirements or design change afterwards, **re-converge `tasks.md`** —
-  re-derive it from the updated documents instead of patching the old list by
-  hand and hoping the coverage table still holds.
+### Phase 3 — Implementation
+
+7. **Only after the design and the tasks are approved**, implement one task at
+   a time, top to bottom, following each task's TDD plan in order.
+8. **Keep the three documents synchronized.** If implementation proves the
+   design wrong, update `design.md` and record it in the Decision log of the
+   affected task — an out-of-date design is worse than no design, because it is
+   still trusted.
+9. If requirements or design change substantially, **re-run the planner** rather
+   than patching `tasks.md` by hand and hoping the coverage table still holds.
+
+**What the planner is not for.** It writes two documents and nothing else. It
+does not write requirements, does not implement code, and cannot ask the user
+anything — every question it has comes back as a flagged assumption in step 5.
+Its full contract lives in `.claude/agents/spec-planner.md`.
 
 ## EARS notation for acceptance criteria
 
@@ -219,6 +251,9 @@ code.
 - `assets/tasks-template.md` — purpose, how to use, status legend, task
   overview, requirements coverage, detailed tasks with TDD plan, decision log and
   outcome.
+
+The first is filled in by this skill; the last two by the `spec-planner`
+subagent, which reads them from these same paths.
 
 **Copy them into the feature folder** rather than writing from scratch: the
 templates carry the section order and the prompts that make a spec reviewable,
