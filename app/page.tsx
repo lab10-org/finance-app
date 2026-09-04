@@ -1,22 +1,21 @@
-"use client";
-
-import dynamic from "next/dynamic";
+import BookMount from "@/components/book/BookMount";
+import { requireSessionUser } from "@/lib/auth/session";
 
 import styles from "./page.module.css";
 
-/*
- * The book's day strips depend on today's date (1.4), so server-rendering it
- * risks a hydration mismatch across midnight or a timezone gap. The server
- * paints only the shell; the book itself is client-only.
+/**
+ * The book, behind the account.
+ *
+ * A Server Component: the session is resolved before a single byte of HTML
+ * exists, so "el libro" cannot appear and then be replaced, and no expense
+ * figure is ever produced for someone without a session (4.2, 4.4).
  */
-const BookApp = dynamic(() => import("@/components/book/BookApp"), {
-  ssr: false,
-});
+export default async function Page() {
+  const user = await requireSessionUser();
 
-export default function Page() {
   return (
     <main className={styles.shell}>
-      <BookApp />
+      <BookMount user={user} />
     </main>
   );
 }

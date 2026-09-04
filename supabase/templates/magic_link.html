@@ -1,0 +1,52 @@
+<!--
+  The Magic Link template, rewritten as a one-time code.
+
+  GoTrue serves Email OTP and Magic Link from this same template; printing
+  {{ .Token }} instead of {{ .ConfirmationURL }} is the whole difference. There
+  is deliberately no link in here: a link tapped inside a mail app opens in that
+  app's in-app browser and lands the session in a browser the person was not
+  using. See requirements.md, "Open questions".
+
+  Colours are inlined hex rather than tokens because email clients do not
+  support CSS custom properties. They are the same values as app/globals.css.
+-->
+<table
+  role="presentation"
+  width="100%"
+  cellpadding="0"
+  cellspacing="0"
+  style="background-color: #f4f4f2; padding: 24px; font-family: Inter, -apple-system, 'Segoe UI', sans-serif"
+>
+  <tr>
+    <td align="center">
+      <table
+        role="presentation"
+        width="390"
+        cellpadding="0"
+        cellspacing="0"
+        style="max-width: 390px; background-color: #ffffff; border: 1px solid #e7e7e2; border-radius: 16px; padding: 24px"
+      >
+        <tr>
+          <td>
+            <p style="margin: 0 0 8px; font-size: 18px; font-weight: 600; color: #15171b">
+              Tu código para entrar
+            </p>
+            <p style="margin: 0 0 24px; font-size: 14px; line-height: 1.5; color: #7c808a">
+              Escríbelo en la pantalla donde lo pediste. Vence en 10 minutos y
+              sólo sirve una vez.
+            </p>
+            <p
+              style="margin: 0 0 24px; padding: 16px; background-color: #ebeff8; border-radius: 16px; text-align: center; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 32px; font-weight: 600; letter-spacing: 8px; color: #2a4ba0"
+            >
+              {{ .Token }}
+            </p>
+            <p style="margin: 0; font-size: 12px; line-height: 1.5; color: #a2a6ae">
+              Si no fuiste tú, ignora este correo: sin el código nadie entra a tu
+              libro de gastos.
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>

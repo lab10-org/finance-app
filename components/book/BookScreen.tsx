@@ -14,6 +14,7 @@ import {
 } from "@/lib/domain/summary";
 import { useBook } from "@/state/book-store";
 
+import { AccountControl } from "./AccountControl";
 import { MonthHeader } from "./MonthHeader";
 import { MonthTotal } from "./MonthTotal";
 import { CategoryBreakdown } from "./CategoryBreakdown";
@@ -67,6 +68,7 @@ export default function BookScreen() {
         <MonthHeader
           month={viewedMonth}
           canGoForward={canGoForward}
+          action={<AccountControl />}
           onPrev={() => goto(-1)}
           onNext={() => goto(1)}
         />
