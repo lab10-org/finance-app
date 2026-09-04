@@ -10,7 +10,6 @@ description: >-
   writes nothing into the repository, only throwaway exploration scripts in a
   scratch directory — and do NOT use it before the feature is implemented and
   reachable in a browser.
-tools: Read, Grep, Glob, Bash
 model: opus
 ---
 
