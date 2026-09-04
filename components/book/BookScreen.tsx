@@ -13,8 +13,10 @@ import {
   topCategory,
 } from "@/lib/domain/summary";
 import { useBookActions } from "@/state/book-actions";
-import { useBook, windowExpenses } from "@/state/book-store";
+import { useBook, windowExpenses, windowStatus } from "@/state/book-store";
 import { useRefreshOnVisible } from "@/state/use-refresh-on-visible";
+
+import { MonthError, MonthLoading, WriteFailureToast } from "./BookStatus";
 
 import { AccountControl } from "./AccountControl";
 import { MonthHeader } from "./MonthHeader";
@@ -68,6 +70,10 @@ export default function BookScreen() {
       ? (expenses.find((e) => e.id === sheetState.expenseId) ?? null)
       : null;
 
+  // A window that has not fully arrived must not have its figures presented as
+  // final (4.2); one that failed says so rather than reading as $0 (3.6, 4.4).
+  const status = windowStatus(state, viewedMonth);
+
   const canGoForward = viewedMonth < monthKeyOf(today);
   const goto = (delta: number) =>
     void actions.goTo(addMonths(viewedMonth, delta));
@@ -107,7 +113,11 @@ export default function BookScreen() {
 
       <span className={styles.rule} />
 
-      {isEmptyMonth ? (
+      {status === "loading" ? (
+        <MonthLoading month={viewedMonth} />
+      ) : status === "error" ? (
+        <MonthError month={viewedMonth} onRetry={() => void actions.refresh()} />
+      ) : isEmptyMonth ? (
         <EmptyMonth month={viewedMonth} onRegister={openSheet} />
       ) : (
         <>
@@ -135,8 +145,14 @@ export default function BookScreen() {
         />
       )}
 
-      {state.pendingDeletion && (
-        <UndoToast onUndo={() => void actions.undo()} />
+      {state.pendingDeletion && <UndoToast onUndo={() => void actions.undo()} />}
+
+      {state.failure && (
+        <WriteFailureToast
+          failure={state.failure}
+          onRetry={() => void actions.retryFailure()}
+          onDismiss={actions.dismissFailure}
+        />
       )}
 
       {sheetState.mode === "create" && (

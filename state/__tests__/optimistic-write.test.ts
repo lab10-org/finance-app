@@ -17,6 +17,7 @@ import {
   findExpense,
   isLocalId,
   windowExpenses,
+  windowStatus,
   type BookState,
 } from "@/state/book-store";
 
@@ -92,6 +93,26 @@ describe("registering is instant (5.1, 5.2)", () => {
     await registerExpense(h.context, draft({ date: "2026-08-15" }));
 
     expect(h.state.viewedMonth).toBe("2026-08");
+  });
+
+  it("loads the window when the expense lands in a month never read (5.6, 4.1)", async () => {
+    // Without this the book would move to a month whose window is incomplete
+    // and sit on "cargando" forever: nothing else would ever ask for it.
+    const h = harness();
+    await registerExpense(h.context, draft({ date: "2026-03-10" }));
+
+    expect(h.state.viewedMonth).toBe("2026-03");
+    expect(windowStatus(h.state, "2026-03")).toBe("loaded");
+  });
+
+  it("loads the window when an EDIT moves the expense to an unread month", async () => {
+    const h = harness();
+    const target = seededBook("2026-09").find((e) => e.date === "2026-09-02")!;
+
+    await editExpense(h.context, target.id, draft({ date: "2026-03-10" }));
+
+    expect(h.state.viewedMonth).toBe("2026-03");
+    expect(windowStatus(h.state, "2026-03")).toBe("loaded");
   });
 });
 

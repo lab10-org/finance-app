@@ -60,7 +60,7 @@ for the local stack, and Docker must be running for them.
 - [x] T9 — Optimistic registration and the adoption of the real id
 - [x] T10 — Editing, deleting and undoing reach the database
 - [x] T11 — Re-reading the window and merging it with what is in flight
-- [ ] T12 — What the book shows while loading, and when a write fails
+- [x] T12 — What the book shows while loading, and when a write fails
 - [ ] T13 — Document the migrations and run the manual pass
 
 ## Requirements coverage
@@ -780,7 +780,7 @@ total, and leaves exactly one row once its write lands.
 
 ### T12 — What the book shows while loading, and when a write fails
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 3.6, 4.2, 4.4, 5.4, 5.5, 6.2, 6.8, 6.9, 7.5 —
   `components/book/BookStatus.tsx`, `BookScreen`
 - **Depends on:** T11
@@ -802,7 +802,31 @@ total, and leaves exactly one row once its write lands.
 
 **Decision log**
 
+- **A real bug fell out of this task, caught by an EXISTING test.** Editing an
+  expense into another month moved the book there (5.6) — but nothing asked for
+  that month's window, so with the new loading state the book sat on "cargando"
+  indefinitely. Before T12 the same bug existed and was merely invisible, showing
+  an empty month instead. `ensureWindow` now runs on both `registerExpense` and
+  `editExpense`, and two new assertions pin it.
+- **The loading state replaces the list rather than dimming it.** Showing last
+  month's figures under this month's heading is worse than showing nothing:
+  wrong, and looking right. Same reasoning as 3.6.
+- Skeleton rows rather than a spinner, so a month arriving has the shape of a
+  month. `prefers-reduced-motion` turns the pulse off.
+- The failure toast reuses the undo toast's dock, padding and radius, so the two
+  never fight for the same corner and the user learns one place to look. It sits
+  at a higher `z-index` because a failure outranks an undo offer.
+- Every colour is an existing token — no new hex — which is what keeps
+  `app/__tests__/no-stray-colours.test.ts` green without an exemption.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` **488 passing across 51
+files**, `npm run build` succeeds. Eleven new assertions: a failed window names
+the month, says the expenses are safe, offers a retry that re-reads and then
+shows the book; an empty month shows the empty state and neither the error nor a
+spinner; a month still arriving shows the loading state; and a failed write shows
+its message with a retry and can be dismissed.
 
 ### T13 — Document the migrations and run the manual pass
 

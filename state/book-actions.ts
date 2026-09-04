@@ -2,6 +2,7 @@
 
 import { useMemo, type Dispatch } from "react";
 
+import { monthKeyOf } from "@/lib/domain/dates";
 import type { ExpenseDraft, MonthKey } from "@/lib/domain/types";
 import type { OpQueue } from "@/lib/expenses/op-queue";
 import type { ExpenseRepository } from "@/lib/expenses/repository";
@@ -90,6 +91,18 @@ export async function refreshWindow(context: ActionContext): Promise<void> {
 /* -------------------------------------------------------------------------- */
 
 /**
+ * Loads `month`'s window if the book does not hold it yet.
+ *
+ * Registering or editing moves the book to the month of the expense (5.6), and
+ * that month may never have been read — nothing else would ask for it, so the
+ * book would sit on "cargando" indefinitely. `loadWindow` swallows its own
+ * failures, so this can never affect the write it accompanies.
+ */
+function ensureWindow(context: ActionContext, month: MonthKey): void {
+  if (needsLoad(context.state, month)) void loadWindow(context, month);
+}
+
+/**
  * Records an expense (Requirement 5).
  *
  * The row is in the book before this function awaits anything: the sheet closes,
@@ -106,6 +119,7 @@ export function registerExpense(context: ActionContext, draft: ExpenseDraft): Pr
   const clientOpId = crypto.randomUUID();
 
   dispatch({ type: "register", draft, id: localId });
+  ensureWindow(context, monthKeyOf(draft.date));
 
   const send = async (): Promise<void> => {
     try {
@@ -146,6 +160,7 @@ export function editExpense(
   const before = findExpense(state, expenseId);
 
   dispatch({ type: "edit", expenseId, draft });
+  ensureWindow(context, monthKeyOf(draft.date));
 
   const send = async (): Promise<void> => {
     try {
