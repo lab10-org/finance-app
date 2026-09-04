@@ -51,7 +51,7 @@ for the local stack, and Docker must be running for them.
 
 - [x] T1 — An expense carries an amount and a currency
 - [x] T2 — `uuid_generate_v7()` and its bit layout
-- [ ] T3 — The `expenses` table, its index and its ownership rules
+- [x] T3 — The `expenses` table, its index and its ownership rules
 - [ ] T4 — The seeded book as a relative template and a trigger
 - [ ] T5 — The row mapper and the unknown category
 - [ ] T6 — The `ExpenseRepository` seam and the widened import guard
@@ -249,7 +249,7 @@ tight burst also sort in generation order, and all 500 are distinct.
 
 ### T3 — The `expenses` table, its index and its ownership rules
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 1.1, 2.1, 2.2, 2.3, 2.4, 5.8, 6.10, 10.1, 10.4, 10.5, 10.6,
   10.7, 11.1, 12.1 — `supabase/migrations/<ts>_expenses.sql`
 - **Depends on:** T2
@@ -276,7 +276,37 @@ tight burst also sort in generation order, and all 500 are distinct.
 
 **Decision log**
 
+- **The design was missing a `grant`, and only running the SQL revealed it.**
+  Enabling RLS and writing four correct policies is not enough: a table created
+  by a migration carries no privileges for the API roles, so every request from
+  the app failed with `permission denied for table expenses` — an error that
+  looks nothing like a policy problem and would have surfaced as a broken app,
+  not a broken test. Added
+  `grant select, insert, update, delete on public.expenses to authenticated`,
+  and a pgTAP assertion for it. `anon` is granted nothing, which is 2.5 stated
+  where it cannot be forgotten. `design.md` updated.
+- **`created_at` and `updated_at` default to `clock_timestamp()`, not `now()`.**
+  Two failures forced this. First, `now()` is the transaction's start time, so
+  the `set_updated_at` trigger wrote back the same instant `created_at` already
+  held and 10.7 could not be observed. Second, and worse: a multi-row insert
+  would give every row an identical `created_at`, and the order of expenses
+  within a day derives from it (1.3) — the 37-row seed of T4 is exactly such an
+  insert, so its rows would have had no defined order. A test now pins that
+  three rows written by one statement get three distinct `created_at` values.
+- The static vitest test asserts `(select auth.uid())` is used and a bare
+  `= auth.uid()` is not. The bare form is re-evaluated once per row; on a month
+  of expenses that is the difference between one call and a few hundred.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` 353 passing across 41
+files, and `supabase test db` reports **32/32 pgTAP assertions passing** over
+three files. Ownership is covered end to end: each account reads only its own
+rows, cross-account updates and deletes affect zero rows, an insert bearing
+another account's `user_id` is rejected with `42501`, and a soft-deleted row
+survives and stays readable to its owner. Constraints are covered too, including
+that `0.1 + 0.2` sums to exactly `0.3` — the evidence that `numeric` is doing
+what `float` could not.
 
 ### T4 — The seeded book as a relative template and a trigger
 

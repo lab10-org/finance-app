@@ -174,8 +174,11 @@ create table public.expenses (
   category_id text not null,          -- deliberately NO enum and NO check (11.1)
   description text check (description is null or length(btrim(description)) > 0),
   date        date not null,
-  created_at  timestamptz not null default now(),
-  updated_at  timestamptz not null default now(),
+  -- clock_timestamp(), not now(): now() is the transaction's start time, so a
+  -- multi-row insert (the seed) would give every row the same created_at, and
+  -- the order of expenses within a day derives from it (1.3).
+  created_at  timestamptz not null default clock_timestamp(),
+  updated_at  timestamptz not null default clock_timestamp(),
   deleted_at  timestamptz,
   -- One per confirmation, reused by its retries (5.8). Null for rows the seed
   -- trigger writes, which no client ever retries.
@@ -189,6 +192,12 @@ create unique index expenses_client_op_id_idx
   on public.expenses (user_id, client_op_id) where client_op_id is not null;
 
 alter table public.expenses enable row level security;
+
+-- RLS decides WHICH rows a role may touch, not whether it may touch the table.
+-- A migration-created table has no privileges for the API roles, so without this
+-- every request fails with "permission denied" despite correct policies.
+-- `anon` is granted nothing: no session, no figure (2.5).
+grant select, insert, update, delete on public.expenses to authenticated;
 
 create policy expenses_select on public.expenses
   for select using (user_id = (select auth.uid()));

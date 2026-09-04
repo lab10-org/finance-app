@@ -57,3 +57,46 @@ describe("uuid_generate_v7 (10.8, 12.1)", () => {
     expect(allSql()).toMatch(/112|0x70|x'70'/);
   });
 });
+
+describe("the expenses table (2.4, 11.1, 12.1)", () => {
+  it("creates the table", () => {
+    expect(allSql()).toMatch(/create\s+table\s+public\.expenses/i);
+  });
+
+  it("enables row level security", () => {
+    expect(allSql()).toMatch(/alter\s+table\s+public\.expenses\s+enable\s+row\s+level\s+security/i);
+  });
+
+  it("declares a policy for each of the four operations", () => {
+    const sql = allSql();
+    for (const op of ["select", "insert", "update", "delete"]) {
+      expect(sql).toMatch(new RegExp(`create\\s+policy[\\s\\S]{0,120}?for\\s+${op}\\b`, "i"));
+    }
+  });
+
+  it("compares against `(select auth.uid())`, not a bare call", () => {
+    // The bare form is re-evaluated per row; the subquery is evaluated once per
+    // statement. On a month of expenses the difference is measurable.
+    const sql = allSql();
+    expect(sql).toMatch(/\(\s*select\s+auth\.uid\(\)\s*\)/i);
+    expect(sql).not.toMatch(/=\s*auth\.uid\(\)/i);
+  });
+
+  it("indexes the read path and excludes soft-deleted rows from it", () => {
+    expect(allSql()).toMatch(
+      /create\s+index[\s\S]{0,120}?on\s+public\.expenses[\s\S]{0,120}?where\s+deleted_at\s+is\s+null/i,
+    );
+  });
+
+  it("makes client_op_id unique per account, so a retry cannot duplicate (5.8)", () => {
+    expect(allSql()).toMatch(
+      /create\s+unique\s+index[\s\S]{0,160}?client_op_id/i,
+    );
+  });
+
+  it("puts no check and no enum on category_id (11.1)", () => {
+    const sql = allSql();
+    expect(sql).not.toMatch(/create\s+type[\s\S]{0,80}?category/i);
+    expect(sql).not.toMatch(/category_id[^\n]*\bcheck\b/i);
+  });
+});
