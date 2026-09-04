@@ -1,6 +1,6 @@
 # Tasks — Supabase expense persistence
 
-**Status:** Not started
+**Status:** Complete
 **Date:** 2026-09-04
 **Requirements:** ./requirements.md
 **Design:** ./design.md
@@ -61,7 +61,7 @@ for the local stack, and Docker must be running for them.
 - [x] T10 — Editing, deleting and undoing reach the database
 - [x] T11 — Re-reading the window and merging it with what is in flight
 - [x] T12 — What the book shows while loading, and when a write fails
-- [ ] T13 — Document the migrations and run the manual pass
+- [x] T13 — Document the migrations and run the manual pass
 
 ## Requirements coverage
 
@@ -830,7 +830,7 @@ its message with a retry and can be dismissed.
 
 ### T13 — Document the migrations and run the manual pass
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 1.6, 2.6, 8.4, 12.2, 12.3, 12.4 — `README.md`
 - **Depends on:** T12
 - **Objective:** a fresh clone reproduces the database with no dashboard step,
@@ -855,7 +855,45 @@ its message with a retry and can be dismissed.
 
 **Decision log**
 
+- **No test was added for the README prose.** The plan called for extending
+  `readme.test.ts` with the new command strings; the user asked not to, and they
+  are right that asserting the presence of substrings in prose buys little. The
+  documentation is there; its verification is not.
+- **The manual pass is a committed script, not a checklist.** `scripts/manual-pass.mjs`
+  signs up two real accounts through the real API with the real anon key and
+  asserts what neither vitest nor pgTAP can reach: that a client holding a JWT
+  sees its own book and nothing else. It is reproducible, so the evidence below
+  can be re-checked rather than believed.
+- It deliberately does NOT run under `npm test`: it needs Docker and a clean
+  database, and a test that sometimes cannot run is a test people learn to
+  ignore.
+- **A finding worth recording: the exactness lives in Postgres, not in
+  JavaScript.** The pass reads back `0.10` and `0.20` exactly, and summing them
+  in JS yields `0.30000000000000004`. `numeric` protects storage; `summary.ts`
+  still adds in float. It changes nothing today — every COP amount is a whole
+  number and integers are exact in JS below 2^53 — but it is the boundary of what
+  the `numeric` decision bought, and the day a currency with decimals appears,
+  the summing needs revisiting too.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` **488 passing across 51
+files**, `npm run build` succeeds, `supabase db reset` reproduces the whole
+schema from the three migrations with no manual step, and `supabase test db`
+reports **45/45 pgTAP assertions**.
+
+The manual pass reports **20/20 against the live stack**, covering what only a
+running system shows: a brand-new account opens seeded on the current month with
+the previous month totalling exactly `$1.412.300`; two accounts cannot read,
+change, or write into each other's books (`42501` on a forged `user_id`); a
+registered expense survives signing out and back in; a retry carrying the same
+`client_op_id` is rejected with `23505` while an identical expense with a new key
+becomes a second row; an edit persists and moves `updated_at`; a deletion leaves
+the book while its row survives, and undo brings it back; and an anonymous client
+gets `permission denied` rather than an empty list.
+
+The dev server was left running on port 3001 for the user to exercise the
+browser-only parts by hand.
 
 ## Open items
 
