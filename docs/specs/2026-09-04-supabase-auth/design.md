@@ -1,6 +1,6 @@
 # Design — Supabase Auth sign-in
 
-**Status:** Draft
+**Status:** Approved
 **Date:** 2026-09-04
 **Requirements:** ./requirements.md
 
