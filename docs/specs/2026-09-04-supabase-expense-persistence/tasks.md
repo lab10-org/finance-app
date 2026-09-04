@@ -53,7 +53,7 @@ for the local stack, and Docker must be running for them.
 - [x] T2 — `uuid_generate_v7()` and its bit layout
 - [x] T3 — The `expenses` table, its index and its ownership rules
 - [x] T4 — The seeded book as a relative template and a trigger
-- [ ] T5 — The row mapper and the unknown category
+- [x] T5 — The row mapper and the unknown category
 - [ ] T6 — The `ExpenseRepository` seam and the widened import guard
 - [ ] T7 — The window read on the server, handed down as props
 - [ ] T8 — The store keeps months, statuses and navigation
@@ -382,7 +382,7 @@ the trigger has no expenses at all.
 
 ### T5 — The row mapper and the unknown category
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 1.2, 1.3, 10.2, 10.5, 10.6, 11.2, 11.3, 11.4 —
   `lib/expenses/mapper.ts`
 - **Depends on:** T1
@@ -404,7 +404,29 @@ the trigger has no expenses at all.
 
 **Decision log**
 
+- **`currency` is carried across as stored, not assumed.** The type says `"COP"`
+  and 10.3 says nothing else is ever written, but a mapper that returned `"COP"`
+  because the type said so would misreport somebody's money the one time it was
+  wrong. The row's value is passed through.
+- **`draftToInsert` normalises the category on the way OUT as well as in.** That
+  is 11.5: an expense whose stored category is unknown shows as "Otros", and
+  confirming an edit on it writes `"otros"`, so an unknown value never survives a
+  write this interface made.
+- A blank description is treated as absent on read, not only on write. The check
+  constraint makes that impossible to store, but the mapper is the boundary and
+  should not depend on the constraint being the only writer.
+- `amount` is read from either a JSON number or a string: PostgREST renders
+  `numeric` either way depending on configuration, and finding that out at
+  runtime would look like every amount being `NaN`.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` **374 passing across 42
+files**, 15 of them new. Covered: dates pass through as strings on both
+month-boundary cases, `numeric` arrives as either number or string, a null and a
+blank description both become absent, an unknown category renders as "otros"
+while keeping its amount in the total, and `draftToInsert` writes `"otros"` for
+one.
 
 ### T6 — The `ExpenseRepository` seam and the widened import guard
 
