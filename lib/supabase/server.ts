@@ -14,8 +14,15 @@ import { readSupabaseEnv } from "@/lib/supabase/env";
  * escape would turn every render into an error the moment a refresh was due.
  */
 export async function createSupabaseServerClient(): Promise<SupabaseClient> {
-  const { url, anonKey } = readSupabaseEnv();
+  /*
+   * `cookies()` is awaited first, and deliberately so. It is what tells Next
+   * this route is dynamic; reading the environment before it means a missing
+   * variable throws during static generation at build time, before the bailout
+   * is ever raised — which is exactly how this was first written, and how the
+   * build failed.
+   */
   const store = await cookies();
+  const { url, anonKey } = readSupabaseEnv();
 
   return createServerClient(url, anonKey, {
     cookies: {

@@ -49,8 +49,8 @@ more later than the checkmark next to it.
 - [x] T7 — "La entrada": the email step
 - [x] T8 — "La entrada": the code step
 - [x] T9 — "La entrada": layout, tokens and copy at 390px
-- [ ] T10 — The route decision and `proxy.ts`
-- [ ] T11 — The server session and the gated routes
+- [x] T10 — The route decision and `proxy.ts`
+- [x] T11 — The server session and the gated routes
 - [ ] T12 — Session context and the session guard
 - [ ] T13 — `"Cerrar sesión"` in the book header
 - [ ] T14 — Document the local stack and run the manual pass
@@ -529,7 +529,7 @@ manual pass, since `npm run dev` needs the stack up to render past the gate.
 
 ### T10 — The route decision and `proxy.ts`
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 4.1, 4.2, 4.3, 5.1, 5.3, 5.4, 5.5 —
   `lib/auth/route-decision.ts`, `proxy.ts`
 - **Depends on:** T2
@@ -557,11 +557,23 @@ manual pass, since `npm run dev` needs the stack up to render past the gate.
 
 **Decision log**
 
+- Two assertions strip comments before matching: the file explains the Next 16
+  rename, so it necessarily names `middleware` in prose. What must not exist is
+  the identifier.
+- `npm run build` prints `ƒ Proxy (Middleware)` in the route table, which is
+  Next's own label for a picked-up `proxy.ts`. That is the confirmation the
+  plan asked for.
+
 **Outcome**
+
+Done. `lib/auth/route-decision.ts` and `proxy.ts`, with 13 tests: the full
+path × session matrix, plus source assertions that the file is written for
+Next 16 rather than copied from a `middleware.ts` tutorial, and that the
+refreshed cookies are carried onto a redirect.
 
 ### T11 — The server session and the gated routes
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 2.1, 3.3, 4.2, 4.3, 4.4, 4.5, 5.1 — `lib/auth/session.ts`,
   `app/page.tsx`, `app/entrada/page.tsx`, `components/book/BookMount.tsx`,
   `components/entrada/EntradaMount.tsx`
@@ -593,7 +605,29 @@ manual pass, since `npm run dev` needs the stack up to render past the gate.
 
 **Decision log**
 
+- **Split not in the design.** `session.ts` imports `server-only`, which throws
+  the moment vitest loads the module, so the logic the plan wanted tested
+  against a stub lives in a new `lib/auth/session-core.ts` (`readSessionUser`).
+  `session.ts` keeps the guard, the React `cache` and the redirect;
+  `route-gate.test.ts` asserts the guard is on one file and absent from the
+  other. `server-only` was not installed and was added as a dependency.
+- **Design corrected, found by `npm run build`.** `createSupabaseServerClient`
+  read the environment before awaiting `cookies()`. The await is what marks the
+  route dynamic, so with the original order Next tried to prerender `/`, hit
+  `MissingEnvError`, and failed the build. Awaiting `cookies()` first fixes it
+  and `design.md` now states the constraint.
+- `readSessionUser` treats an unreachable auth service as "no session" rather
+  than letting the error escape: the proxy then routes to "la entrada", which
+  is where Requirement 8 explains the failure.
+- The v1 `book-app.test.tsx` now passes a `user`. What it protects — that
+  `BookApp` brings its own store — is unchanged.
+
 **Outcome**
+
+Done. `session-core.ts`, `session.ts`, the rewritten `app/page.tsx`, the new
+`app/entrada/page.tsx`, `BookMount.tsx` and `EntradaMount.tsx`, with 6 + 10
+tests. `npm run build` passes: `/` and `/entrada` are both `ƒ` (dynamic), and
+no `ssr: false` error is raised from a Server Component.
 
 ### T12 — Session context and the session guard
 

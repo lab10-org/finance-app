@@ -172,6 +172,11 @@ import type { NextRequest, NextResponse } from "next/server";
  * For Server Components and the DAL. Reads cookies through `next/headers`.
  * `setAll` is a no-op wrapped in try/catch: a Server Component may not write
  * cookies, and the proxy has already refreshed the token for this request.
+ *
+ * MUST await `cookies()` before reading the environment (found in T11). That
+ * await is the dynamic-route bailout; reading the environment first makes a
+ * missing variable throw during static generation, and the build fails
+ * prerendering "/" instead of marking it dynamic.
  */
 export function createSupabaseServerClient(): Promise<SupabaseClient>;
 
