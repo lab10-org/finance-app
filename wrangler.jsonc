@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "finance-app",
+  "main": ".open-next/worker.js",
+
+  /*
+   * Pinned to the workerd that ships with the wrangler in devDependencies. A
+   * date ahead of the installed runtime is ignored, so this moves forward
+   * deliberately, together with `npm update wrangler`.
+   */
+  "compatibility_date": "2026-09-03",
+
+  /*
+   * `nodejs_compat` is not optional here: `proxy.ts` runs on the Node.js
+   * runtime — Next 16 does not let that be configured — and @supabase/ssr
+   * reaches for Node built-ins underneath. `global_fetch_strictly_public`
+   * makes a fetch to our own hostname leave the Worker and come back through
+   * the edge, which is what the adapter expects.
+   */
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+
+  /*
+   * Deliberately absent, and each for a reason:
+   *
+   * - No R2 incremental cache. Every route reads the session cookie (the book
+   *   and the entrance both resolve it server-side), so nothing is ISR or
+   *   statically revalidated and the cache would stay empty.
+   * - No `IMAGES` binding: the app does not use `next/image`.
+   * - No `WORKER_SELF_REFERENCE` service: it exists to serve the cache purge
+   *   and revalidation paths, which follow from the two above.
+   *
+   * Add them the day a route starts revalidating on a schedule.
+   */
+}

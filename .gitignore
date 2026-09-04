@@ -8,6 +8,12 @@
 /out/
 next-env.d.ts
 
+# cloudflare
+/.open-next/
+/.wrangler/
+cloudflare-env.d.ts
+.dev.vars
+
 # testing
 /coverage
 
