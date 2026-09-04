@@ -86,8 +86,9 @@ export async function codigoPara(email: string, timeoutMs = 15_000): Promise<str
  * Un correo distinto por prueba.
  *
  * La cuenta se crea sola en el primer ingreso, así que un correo nuevo es una
- * cuenta nueva y vacía: dos pruebas nunca se ven los gastos entre ellas, y
- * ninguna depende de que la base venga sembrada.
+ * cuenta nueva: dos pruebas nunca se ven los gastos entre ellas. El libro no
+ * llega vacío —un trigger le siembra el mes estándar al crear la cuenta— pero sí
+ * llega idéntico en cada corrida, que es lo que una aserción necesita.
  */
 export function correoDePrueba(prefijo = "e2e"): string {
   const unico = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

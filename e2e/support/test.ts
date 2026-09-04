@@ -21,8 +21,10 @@ interface Fixtures {
   /**
    * Entra con una cuenta recién creada y devuelve su correo.
    *
-   * Cada llamada usa una dirección distinta, así que la cuenta nace vacía y la
-   * prueba no hereda gastos de nadie.
+   * Cada llamada usa una dirección distinta, así que la cuenta nace nueva y la
+   * prueba no hereda nada de otra. No nace *vacía*: un trigger le siembra el mes
+   * estándar (requisito 8), igual en cada corrida, y eso es justo lo que hace
+   * que una aserción pueda citar esas cifras.
    */
   entrar: (opciones?: { email?: string }) => Promise<Cuenta>;
 }

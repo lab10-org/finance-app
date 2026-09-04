@@ -101,6 +101,25 @@ Ejecutar el plan aprobado.
   de resolverla por cuenta propia.
 - Reportar al final qué quedó hecho y qué quedó pendiente, sin adornos.
 
+La fase **no cierra con la suite unitaria en verde**: cierra cuando alguien usó
+la feature y funcionó.
+
+Ese último paso lo conduce la skill **`/verify-implementation`**. Reparte el
+trabajo igual que la fase anterior, con un subagente en contexto propio: el
+subagente **`plan-e2e`** explora la feature en un navegador y propone las pocas
+pruebas que valen la pena; la skill las escribe, las corre y entrega un veredicto
+de cierre.
+
+El explorador **no implementó la feature** — no sabe qué fue difícil ni dónde el
+implementador ya sabe que funciona, así que la usa como quien llega de afuera.
+Por eso encuentra lo que la implementación olvidó y no lo que ya recuerda.
+
+Los hallazgos se clasifican antes de actuar sobre ellos: un **defecto** se
+arregla aquí mismo; un **hueco en el spec** para la fase y vuelve al usuario —
+nunca se decide de paso—; una **prueba mal escrita** se corrige diciéndolo en
+voz alta. Nunca se debilita una aserción para que pase: eso deja la suite verde
+sin que compruebe nada.
+
 ## Convenciones
 
 - **Idioma**: la UI, el copy y los nombres del dominio van en español. El

@@ -164,8 +164,10 @@ persona: `e2e/support/mailpit.ts` consulta su API y saca los seis dígitos. No
 hay atajo con la llave de servicio, y por eso lo que la suite prueba es el flujo
 que la gente realmente usa.
 
-Cada prueba se inventa su propia dirección de correo, así que estrena cuenta y
-libro vacío. De ahí salen dos reglas que conviene no romper: **nunca vaciar el
+Cada prueba se inventa su propia dirección de correo, así que estrena cuenta. No
+estrena libro vacío: el trigger de `seed_new_account` le siembra el mes estándar,
+idéntico en cada corrida, y por eso una aserción puede citar esas cifras. De ahí
+salen dos reglas que conviene no romper: **nunca vaciar el
 buzón de Mailpit** —sólo se puede vaciar entero, y en paralelo una prueba se
 llevaría por delante los correos de las otras— y **nunca reusar una dirección
 fija**, que volvería a una prueba dependiente de lo que dejó la anterior.
