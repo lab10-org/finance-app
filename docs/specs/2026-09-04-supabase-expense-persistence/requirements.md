@@ -1,6 +1,6 @@
 # Requirements — Supabase expense persistence
 
-**Status:** In review
+**Status:** Approved
 **Date:** 2026-09-04
 **Author:** Juan Sebastian Henao Parra
 
@@ -158,10 +158,13 @@ cost more than the purchase did.
 5.4 IF the write fails THEN THE SYSTEM SHALL remove the expense from the book,
     tell the user it could not be saved, and offer them their entry back rather
     than discarding what they typed.
-5.5 THE SYSTEM SHALL keep the existing rule that registering an expense moves the
+5.5 IF the write fails THEN THE SYSTEM SHALL offer the user an action that
+    retries the same entry, without making them type it again.
+5.6 THE SYSTEM SHALL keep the existing rule that registering an expense moves the
     book to the month of that expense's date.
-5.6 THE SYSTEM SHALL NOT record the same expense twice when the user confirms
-    once.
+5.7 THE SYSTEM SHALL NOT record the same expense twice when the user confirms
+    once, including when a failed write is retried and the original write
+    eventually succeeded.
 
 ### Requirement 6 — Editing and deleting reach the database
 
@@ -186,6 +189,10 @@ so that the book stays true.
 6.7 THE SYSTEM SHALL NOT show a deleted expense in any list, total or aggregate.
 6.8 IF a deletion fails to persist THEN THE SYSTEM SHALL return the expense to
     the book and tell the user it was not deleted.
+6.9 IF an edit or a deletion fails to persist THEN THE SYSTEM SHALL offer the
+    user an action that retries it.
+6.10 THE SYSTEM SHALL keep a soft-deleted expense's row indefinitely; nothing in
+     this feature removes it.
 
 ### Requirement 7 — An action taken on an unconfirmed expense is not lost
 
@@ -196,15 +203,17 @@ to wait on something I cannot see.
 **Acceptance criteria**
 
 7.1 WHILE an expense is waiting for the database to confirm it THE SYSTEM SHALL
-    keep it editable and deletable in the interface, or SHALL visibly indicate
-    that it is not yet actionable.
+    keep it fully editable and deletable, with the same controls and the same
+    appearance as any other expense.
 7.2 WHEN the user edits or deletes an expense whose confirmation has not arrived
-    THE SYSTEM SHALL apply that action to the correct expense once the
-    confirmation arrives.
-7.3 THE SYSTEM SHALL NOT apply such an action to a different expense, and SHALL
+    THE SYSTEM SHALL show the result immediately, exactly as it would for a
+    confirmed expense.
+7.3 WHEN the confirmation arrives THE SYSTEM SHALL apply the pending action to
+    the expense the user acted on.
+7.4 THE SYSTEM SHALL NOT apply such an action to a different expense, and SHALL
     NOT silently drop it.
-7.4 IF such an action cannot be applied THEN THE SYSTEM SHALL tell the user and
-    leave the book showing what is actually stored.
+7.5 IF such an action cannot be applied THEN THE SYSTEM SHALL tell the user,
+    leave the book showing what is actually stored, and offer a retry.
 
 ### Requirement 8 — A new account starts with a book worth looking at
 
@@ -226,6 +235,9 @@ have typed anything into it.
     not multiply the example expenses.
 8.6 IF seeding fails THEN THE SYSTEM SHALL still let the user into an empty book
     rather than blocking sign-in.
+8.7 THE SYSTEM SHALL seed an account only at the moment it is created, and SHALL
+    NOT seed an account that already existed before this feature — such an
+    account opens an empty book, which is the correct picture of its spending.
 
 ### Requirement 9 — The book catches up when it may be stale
 
@@ -328,23 +340,19 @@ to remember what they clicked in a dashboard.
   category, breakdown and "comparativo" keep the definitions and the criteria
   they already have in the v1 spec. Nothing about them is recomputed in the
   database.
-- **Purging soft-deleted rows** — see Open questions.
+- **Purging soft-deleted rows** — decided against, see 6.10. Rows accumulate on
+  purpose; a retention rule can be added when there is evidence it is needed.
+- **Backfilling accounts that predate this feature** — decided against, see 8.7.
+  Seeding only ever happens at account creation.
 
 ## Open questions
 
-- **What happens to an expense that is edited or deleted before its write is
-  confirmed?** Requirement 7 says the action must not be lost or misapplied, but
-  not which of the two behaviors the user sees — the controls stay live and the
-  action is applied on confirmation, or the row is visibly not-yet-actionable for
-  that instant. — Product decision (user) — blocks the interaction design of 7.1.
-- **Do soft-deleted rows ever get purged?** They accumulate forever unless
-  something removes them. — Developer decision (user) — blocks whether this
-  feature ships a retention rule or explicitly defers one.
-- **Are accounts that already exist locally seeded?** Requirement 8 covers
-  account creation; the developer's existing local accounts predate it and would
-  open an empty book. — Developer decision (user) — blocks whether seeding is
-  triggered only on creation or also on a first sign-in that finds no expenses.
-- **Does a failed write get a retry the user can press, or only the message and
-  their entry back?** 5.4, 6.2 and 6.8 require the book to stay truthful and the
-  user to be told, and stop there. — Product decision (user) — blocks the error
-  affordance in "la hoja" and in the book.
+None. The four questions this document opened were closed on 2026-09-04:
+
+- *What happens to an expense acted on before its write is confirmed?* — The
+  controls stay live and behave normally; the pending action is applied when the
+  confirmation arrives. Now 7.1–7.5.
+- *Do soft-deleted rows get purged?* — No. Now 6.10.
+- *Are pre-existing accounts seeded?* — No. Now 8.7.
+- *Does a failed write get a retry?* — Yes, every failed write offers one. Now
+  5.5, 6.9 and 7.5.
