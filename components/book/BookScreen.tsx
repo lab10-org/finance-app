@@ -12,7 +12,7 @@ import {
   monthTotal,
   topCategory,
 } from "@/lib/domain/summary";
-import { useBook } from "@/state/book-store";
+import { newLocalId, useBook, windowExpenses } from "@/state/book-store";
 
 import { AccountControl } from "./AccountControl";
 import { MonthHeader } from "./MonthHeader";
@@ -27,7 +27,9 @@ import styles from "./BookScreen.module.css";
 
 export default function BookScreen() {
   const { state, dispatch } = useBook();
-  const { expenses, viewedMonth, filter, today, sheet: sheetState } = state;
+  const { viewedMonth, filter, today, sheet: sheetState } = state;
+  // The window flattened: every pure function below still sees a plain list.
+  const expenses = windowExpenses(state, viewedMonth);
 
   const breakdown = categoryBreakdown(expenses, viewedMonth);
   /*
@@ -133,7 +135,7 @@ export default function BookScreen() {
         <ExpenseSheet
           mode="create"
           defaultDate={defaultDate}
-          onSubmit={(draft) => dispatch({ type: "register", draft })}
+          onSubmit={(draft) => dispatch({ type: "register", draft, id: newLocalId() })}
           onDismiss={closeSheet}
         />
       )}

@@ -56,7 +56,7 @@ for the local stack, and Docker must be running for them.
 - [x] T5 — The row mapper and the unknown category
 - [x] T6 — The `ExpenseRepository` seam and the widened import guard
 - [x] T7 — The window read on the server, handed down as props
-- [ ] T8 — The store keeps months, statuses and navigation
+- [x] T8 — The store keeps months, statuses and navigation
 - [ ] T9 — Optimistic registration and the adoption of the real id
 - [ ] T10 — Editing, deleting and undoing reach the database
 - [ ] T11 — Re-reading the window and merging it with what is in flight
@@ -548,7 +548,7 @@ declared `ssr: false`, which was the one structural risk in the approach.
 
 ### T8 — The store keeps months, statuses and navigation
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 3.1, 3.4, 3.5, 4.1, 4.2, 4.3, 4.4, 4.5 —
   `state/book-store.tsx`, `state/book-actions.ts`, `windowExpenses`
 - **Depends on:** T7
@@ -575,7 +575,42 @@ declared `ssr: false`, which was the one structural risk in the approach.
 
 **Decision log**
 
+- **A missing month and an empty month are different things, and the distinction
+  carries 3.5 and 4.2.** A month absent from `months` has never been asked for,
+  and reads as `loading`; a month present with `status: "loaded"` and no
+  expenses is the empty state. Collapsing the two would either spin forever on
+  an empty month or show `$0` for one that has not arrived.
+- **`markMonths` keeps the expenses a month already had when it goes `loading`
+  or `error`.** Emptying them would flash the book to `$0` on every refresh, and
+  9.5 says a failed re-read keeps what it has. There is a test for each.
+- **`windowStatus` reports the WORSE of the window's two months, and prefers
+  `loading` over `error`.** The previous month is only the "comparativo", but a
+  comparativo that has not arrived is not a figure that may be shown as final.
+- **The `edit` case now removes and re-inserts instead of mapping in place**,
+  because an edit may move an expense to another month's slice. `createdAt` is
+  preserved, so `groupByDay` keeps the row exactly where it was on screen. The
+  prototype's assertion for this compared array indices — an implementation
+  detail — and was rewritten to compare the order the user actually sees.
+- **`adoptExpense` keeps the optimistic `createdAt` rather than the stored one.**
+  Otherwise adopting the real id could make the row jump to a different position
+  within its day, which is precisely what 5.3 forbids.
+- Provisional ids are prefixed `local-`. Real ids are UUIDv7 from Postgres, so
+  anything with a `local-` id reaching the repository is a bug — and one that
+  shows up in a test failure instead of silently writing a malformed row.
+- `book-actions.ts` holds the asynchronous half as plain functions over
+  `(state, dispatch, repository)`, not hooks, so tests call and await them
+  directly. The reducer stays pure and synchronous.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` **434 passing across 46
+files** (35 of them new across `book-months` and `book-actions`), and `npm run
+build` succeeds. Covered: the store starts from the server's window with both
+months `loaded`; an unread month reports `loading` for its whole window and is
+read once; returning to a read month issues no read; a refused move past today
+issues no read either; a failed month keeps its data and can be retried into
+success; and `windowExpenses` feeds `summary.ts` a flat list that still totals
+the previous month at exactly `$1.412.300`.
 
 ### T9 — Optimistic registration and the adoption of the real id
 

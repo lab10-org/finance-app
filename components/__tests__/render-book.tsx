@@ -12,9 +12,9 @@ export const TODAY = "2026-09-03";
 export function renderInBook(ui: ReactElement, today: string = TODAY) {
   return {
     user: userEvent.setup(),
-    ...render(<BookProvider today={today} expenses={seededBook()}>
-        {ui}
-      </BookProvider>),
+    ...render(
+      <BookProvider initial={initialBook({ today })}>{ui}</BookProvider>,
+    ),
   };
 }
 

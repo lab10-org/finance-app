@@ -57,11 +57,7 @@ export default function BookApp({
           Keyed by the account, so a different person signing in on this device
           can never inherit the previous one's reducer state (6.3).
         */}
-        <BookProvider
-          key={user.id}
-          today={initial.today}
-          expenses={initial.expenses}
-        >
+        <BookProvider key={user.id} initial={initial}>
           <BookScreen />
         </BookProvider>
       </SessionGuard>
