@@ -55,7 +55,7 @@ for the local stack, and Docker must be running for them.
 - [x] T4 — The seeded book as a relative template and a trigger
 - [x] T5 — The row mapper and the unknown category
 - [x] T6 — The `ExpenseRepository` seam and the widened import guard
-- [ ] T7 — The window read on the server, handed down as props
+- [x] T7 — The window read on the server, handed down as props
 - [ ] T8 — The store keeps months, statuses and navigation
 - [ ] T9 — Optimistic registration and the adoption of the real id
 - [ ] T10 — Editing, deleting and undoing reach the database
@@ -494,7 +494,7 @@ behaviour of T9-T11 testable at all.
 
 ### T7 — The window read on the server, handed down as props
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 1.2, 2.5, 3.1, 3.2, 3.3, 3.4, 3.6 — `app/page.tsx`,
   `components/book/BookMount.tsx`, `components/book/BookApp.tsx`, `InitialBook`
 - **Depends on:** T6
@@ -520,7 +520,31 @@ behaviour of T9-T11 testable at all.
 
 **Decision log**
 
+- **`readInitialBook` never throws.** A read that fails returns
+  `{ expenses: [], error: true }` rather than propagating: an exception would
+  take the page down, and — worse — an empty book with no error flag would state
+  that the month's spending was zero. Being wrong while looking right is the one
+  outcome a spending tracker cannot afford (3.6).
+- The reading logic lives in `lib/expenses/initial-book.ts`, not inline in
+  `app/page.tsx`, so it can be tested against the fake repository. A Server
+  Component that awaits `cookies()` is not reachable from vitest.
+- A test asserts `JSON.parse(JSON.stringify(book))` round-trips. `InitialBook`
+  crosses the Server/Client boundary into a component that is itself
+  `ssr: false`; a `Date` or a `Map` in there fails at runtime, and nothing in the
+  type system catches it.
+- **`npm ci` had to be run inside the worktree.** vitest resolves `node_modules`
+  by walking up the tree and so worked from the start, but Turbopack refuses to
+  compile through a symlink or outside its workspace root, so `npm run build`
+  could not find `next` at all. `node_modules` is gitignored, so this affects
+  nothing but the working copy.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` **399 passing across 44
+files**, and — the verification that actually settles approach C — **`npm run
+build` succeeds**, with `/` compiled as a dynamic, server-rendered route. That is
+the evidence that the window read on the server does reach a client component
+declared `ssr: false`, which was the one structural risk in the approach.
 
 ### T8 — The store keeps months, statuses and navigation
 

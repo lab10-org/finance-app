@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 
 import { seededBook } from "@/lib/domain/__tests__/fixtures";
+import type { InitialBook } from "@/lib/expenses/initial-book";
 import { BookProvider, useBook } from "@/state/book-store";
 
 export const TODAY = "2026-09-03";
@@ -14,6 +15,20 @@ export function renderInBook(ui: ReactElement, today: string = TODAY) {
     ...render(<BookProvider today={today} expenses={seededBook()}>
         {ui}
       </BookProvider>),
+  };
+}
+
+/**
+ * The `InitialBook` a test hands to `BookApp` — the shape `app/page.tsx`
+ * produces on the server, with the seeded book already in it.
+ */
+export function initialBook(over: Partial<InitialBook> = {}): InitialBook {
+  return {
+    month: "2026-09",
+    today: TODAY,
+    expenses: seededBook(),
+    error: false,
+    ...over,
   };
 }
 

@@ -5,6 +5,7 @@ import { useMemo } from "react";
 import { createSupabaseAuthClient } from "@/lib/auth/auth-client";
 import { subscribeToSessionEnd } from "@/lib/auth/session-events";
 import type { SessionUser } from "@/lib/auth/types";
+import type { InitialBook } from "@/lib/expenses/initial-book";
 import { SessionProvider } from "@/state/session-context";
 import { BookProvider } from "@/state/book-store";
 
@@ -13,6 +14,8 @@ import { SessionGuard } from "./SessionGuard";
 
 export interface BookAppProps {
   user: SessionUser;
+  /** The window the server already read (3.1). */
+  initial: InitialBook;
   /**
    * Where to go once there is no session. Supplied by `BookMount`, which owns
    * the router — keeping `useRouter` out of here is what lets this component
@@ -29,6 +32,7 @@ export interface BookAppProps {
  */
 export default function BookApp({
   user,
+  initial,
   onSignedOut = () => {},
   subscribe = subscribeToSessionEnd,
 }: BookAppProps) {
@@ -53,7 +57,11 @@ export default function BookApp({
           Keyed by the account, so a different person signing in on this device
           can never inherit the previous one's reducer state (6.3).
         */}
-        <BookProvider key={user.id}>
+        <BookProvider
+          key={user.id}
+          today={initial.today}
+          expenses={initial.expenses}
+        >
           <BookScreen />
         </BookProvider>
       </SessionGuard>

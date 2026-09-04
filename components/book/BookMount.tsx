@@ -6,6 +6,7 @@ import { useCallback } from "react";
 
 import { ENTRADA_PATH } from "@/lib/auth/route-decision";
 import type { SessionUser } from "@/lib/auth/types";
+import type { InitialBook } from "@/lib/expenses/initial-book";
 
 /*
  * The book's day strips depend on today's date (1.4 of the prototype), so
@@ -17,7 +18,13 @@ import type { SessionUser } from "@/lib/auth/types";
  */
 const BookApp = dynamic(() => import("./BookApp"), { ssr: false });
 
-export default function BookMount({ user }: { user: SessionUser }) {
+export default function BookMount({
+  user,
+  initial,
+}: {
+  user: SessionUser;
+  initial: InitialBook;
+}) {
   const router = useRouter();
 
   // The router lives here rather than in BookApp so that BookApp stays
@@ -26,5 +33,5 @@ export default function BookMount({ user }: { user: SessionUser }) {
     router.replace(ENTRADA_PATH);
   }, [router]);
 
-  return <BookApp user={user} onSignedOut={goToEntrada} />;
+  return <BookApp user={user} initial={initial} onSignedOut={goToEntrada} />;
 }

@@ -5,6 +5,8 @@ import BookApp from "@/components/book/BookApp";
 import { SessionGuard } from "@/components/book/SessionGuard";
 import type { SessionUser } from "@/lib/auth/types";
 
+import { initialBook } from "./render-book";
+
 describe("SessionGuard (5.5, 5.6)", () => {
   it("renders the book while the session holds", () => {
     render(
@@ -82,7 +84,7 @@ describe("a second account on the same device (6.3)", () => {
 
   it("starts from the seeded month rather than inheriting the previous book", async () => {
     const user = userEvent.setup();
-    const { rerender } = render(<BookApp user={A} />);
+    const { rerender } = render(<BookApp user={A} initial={initialBook()} />);
 
     const seededMonth = screen.getByTestId("month-title").textContent as string;
 
@@ -91,7 +93,7 @@ describe("a second account on the same device (6.3)", () => {
     await user.click(screen.getByRole("button", { name: /mes anterior/i }));
     expect(screen.getByTestId("month-title").textContent).not.toBe(seededMonth);
 
-    rerender(<BookApp user={B} />);
+    rerender(<BookApp user={B} initial={initialBook()} />);
 
     expect(screen.getByTestId("month-title").textContent).toBe(seededMonth);
   });
