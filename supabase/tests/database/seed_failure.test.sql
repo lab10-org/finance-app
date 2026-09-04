@@ -9,7 +9,12 @@ select plan(2);
 -- can satisfy. This is the only way to exercise the exception path, and it is
 -- worth exercising — 8.6 is a promise about the worst day, and an untested
 -- `exception` block is a guess.
-alter table public.expenses add constraint expenses_seed_break check (amount < 0);
+-- `not valid` so the constraint applies to new rows without being checked
+-- against the ones already stored. Without it this file only passes on an empty
+-- database: adding a check that existing rows violate is rejected outright, and
+-- the test would fail for a reason that has nothing to do with what it asserts.
+alter table public.expenses
+  add constraint expenses_seed_break check (amount < 0) not valid;
 
 insert into auth.users (id, instance_id, aud, role, email, created_at)
 values ('bbbbbbbb-0000-0000-0000-000000000001', '00000000-0000-0000-0000-000000000000',
