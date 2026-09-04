@@ -1,6 +1,6 @@
 # Tasks — Supabase Auth sign-in
 
-**Status:** In progress
+**Status:** Complete
 **Date:** 2026-09-04
 **Requirements:** ./requirements.md
 **Design:** ./design.md
@@ -53,7 +53,7 @@ more later than the checkmark next to it.
 - [x] T11 — The server session and the gated routes
 - [x] T12 — Session context and the session guard
 - [x] T13 — `"Cerrar sesión"` in the book header
-- [ ] T14 — Document the local stack and run the manual pass
+- [x] T14 — Document the local stack and run the manual pass
 
 ## Requirements coverage
 
@@ -731,7 +731,7 @@ The whole v1 suite still passes untouched.
 
 ### T14 — Document the local stack and run the manual pass
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 1.2, 1.3, 1.7, 2.4, 2.5, 3.3, 5.2 — `README.md`
 - **Depends on:** T13
 - **Objective:** a developer who has just cloned the repository can get from
@@ -762,10 +762,70 @@ The whole v1 suite still passes untouched.
 
 **Decision log**
 
+- **The manual pass was run, not deferred.** Docker turned out to be running,
+  so `supabase start` was executed and the whole flow exercised end to end.
+- **Assumption 3 of the plan is resolved.** `supabase start` prints *both*
+  `ANON_KEY` and `PUBLISHABLE_KEY`. `NEXT_PUBLIC_SUPABASE_ANON_KEY` carrying the
+  `ANON_KEY` JWT works, so `.env.example` needed no change.
+- **A dev-only trap worth recording.** Browsing `127.0.0.1` while `next dev`
+  binds `localhost` makes Next block `/_next/*` as cross-origin: no client
+  chunk loads, nothing hydrates, and "la entrada" falls back to a native form
+  submit that reloads the page. It looks exactly like a broken `preventDefault`.
+  Use `http://localhost:<port>`, or set `allowedDevOrigins`. Not a defect in
+  this feature — the same page is fully interactive on `localhost`.
+- `WARN: no files matched pattern: supabase/seed.sql` on start, as expected:
+  seeding is out of scope while expenses are not stored.
+- One honest gap: the `rate-limited` message states the full 60 s while GoTrue
+  knows the exact remainder ("after 29 seconds"). Stating the full cooldown is
+  the deliberate consequence of not parsing the provider's English (7.6); the
+  disabled resend button still shows the accurate live countdown.
+
 **Outcome**
+
+Done, including the manual pass. Results, one per criterion:
+
+- **1.2 —** `supabase start` came up from this checkout with no dashboard step.
+  API at `http://127.0.0.1:54321`, Studio at `:54323`.
+- **1.3 —** The email landed in Mailpit at `http://127.0.0.1:54324`, subject
+  `"Tu código para entrar"`, containing the six digits `017553` and **zero**
+  links. The template override works.
+- **1.7 —** `README.md` written; its commands match what was run here.
+- **2.4 / 2.5 —** `POST /auth/v1/otp` for an address with no account returned
+  `200 {}` and created nothing visible; verifying its code returned a session
+  for a new `authenticated` user. No separate sign-up exists.
+- **3.3 —** Signed in through the real UI: typed the address, read the code in
+  Mailpit, typed it, landed on the book. The header showed
+  `juanse@lab10.ai · Cerrar sesión` in the slot the v1 search icon vacated.
+- **Beyond the plan, also confirmed by hand:** `/` and an arbitrary path both
+  answer `307 → /entrada` without a session and `200` with one (4.1, 4.3); a
+  reload keeps the session and paints the book with no flash (5.1); the
+  60-second cooldown is enforced by the server, which answers
+  `429 over_email_send_rate_limit` (2.7); the countdown ticks live in the UI
+  (3.6); confirming `"Sí, cerrar sesión"` returns to "la entrada" and `/` then
+  redirects again, so the credential really is gone (6.2); and the screen holds
+  at a 390px-wide window (7.1).
+- **5.2 —** **Not verified.** Installing to a home screen and reopening the next
+  day cannot be done in this session. It is the one criterion still owed a human
+  check.
 
 ## Open items
 
-- Nothing yet. Anything discovered during execution that no task above covers —
-  deferred work, follow-ups, questions raised by the implementation — is
-  recorded here as it is found.
+- **Criterion 5.2 is still owed a human check.** Install the app to a phone's
+  home screen, close it, and reopen it the next day; the session should still
+  be there. Everything it rests on was verified (the cookies survive a reload,
+  the proxy refreshes on every navigation, and the refresh-token lifetime is
+  Supabase's default), but the criterion itself spans a day and a real device.
+- **The `rate-limited` message states the full 60 s, not the remaining time.**
+  Deliberate — 7.6 forbids passing the provider's English through, and the
+  remainder only exists inside it. If this ever reads wrong to a user, the fix
+  is to derive the remainder from `codeSentAt`, which the screen already
+  tracks for the resend countdown.
+- **`allowedDevOrigins` is not configured.** Browsing `127.0.0.1` while
+  `next dev` binds `localhost` blocks the dev chunks and nothing hydrates. The
+  README tells developers to use `localhost`; setting `allowedDevOrigins` in
+  `next.config.ts` would remove the trap altogether. Not done here because it
+  is a dev-server concern, not part of this feature's scope.
+- **Persisting expenses is the next spec**, as `requirements.md` states. The
+  seam this feature exists to create — `SessionUser`, available on the server
+  through `getSessionUser()` and on the client through `useSession()` — is what
+  that work attaches rows to.
