@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  formatAmount,
   formatCop,
   formatDayStrip,
   formatMonthLower,
@@ -11,6 +12,27 @@ import {
   formatSharePercent,
   parseAmountInput,
 } from "@/lib/format";
+
+describe("formatAmount (10.2, 10.3)", () => {
+  const base = {
+    id: "e1",
+    categoryId: "otros" as const,
+    date: "2026-09-03",
+    createdAt: 0,
+  };
+
+  it("renders a COP expense exactly as formatCop renders its number", () => {
+    const e = { ...base, amount: 1284500, currency: "COP" as const };
+    expect(formatAmount(e)).toBe(formatCop(1284500));
+    expect(formatAmount(e)).toBe("$1.284.500");
+  });
+
+  it("keeps whole pesos when the stored amount carries decimals", () => {
+    // `numeric(14,2)` round-trips as 16800.00; the book still shows "$16.800".
+    const e = { ...base, amount: 16800.0, currency: "COP" as const };
+    expect(formatAmount(e)).toBe("$16.800");
+  });
+});
 
 describe("formatCop (9.1, 9.2)", () => {
   it("writes pesos with a dot as thousands separator and no decimals", () => {

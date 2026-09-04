@@ -22,7 +22,7 @@ describe("seed data (10.1, 10.2)", () => {
   it("reproduces the September rows of the mockup", () => {
     const september = SEED_EXPENSES.filter((e) => monthKeyOf(e.date) === "2026-09");
     expect(
-      september.map((e) => [e.date, e.description, e.amountCop, e.categoryId]),
+      september.map((e) => [e.date, e.description, e.amount, e.categoryId]),
     ).toEqual([
       ["2026-09-01", "La Mayorista", 63_400, "mercado"],
       ["2026-09-01", "Spotify Premium", 16_900, "suscripciones"],
@@ -43,8 +43,8 @@ describe("seed data (10.1, 10.2)", () => {
     const ids = new Set(SEED_EXPENSES.map((e) => e.id));
     expect(ids.size).toBe(SEED_EXPENSES.length);
     for (const e of SEED_EXPENSES) {
-      expect(Number.isInteger(e.amountCop)).toBe(true);
-      expect(e.amountCop).toBeGreaterThan(0);
+      expect(Number.isInteger(e.amount)).toBe(true);
+      expect(e.amount).toBeGreaterThan(0);
     }
   });
 });

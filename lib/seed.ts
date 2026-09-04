@@ -1,4 +1,8 @@
+import { DEFAULT_CURRENCY } from "@/lib/domain/types";
 import type { Expense, MonthKey } from "@/lib/domain/types";
+
+/** A seed row carries no currency of its own; it is stamped below (10.3). */
+type SeedRow = Omit<Expense, "currency">;
 
 /*
  * Seed data for the prototype (10.1, 10.2). It lives only in memory: every
@@ -11,11 +15,11 @@ import type { Expense, MonthKey } from "@/lib/domain/types";
  * `createdAt` descends within a day so the first row listed here is the one
  * that renders on top (1.3).
  */
-export const SEED_EXPENSES: Expense[] = [
+const SEED_ROWS: SeedRow[] = [
   {
     id: "seed-1",
     date: "2026-08-01",
-    amountCop: 132400,
+    amount: 132400,
     categoryId: "mercado",
     description: "Éxito Poblado",
     createdAt: 1785585660000,
@@ -23,7 +27,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-2",
     date: "2026-08-02",
-    amountCop: 38900,
+    amount: 38900,
     categoryId: "restaurantes",
     description: "Crepes & Waffles",
     createdAt: 1785672060000,
@@ -31,7 +35,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-3",
     date: "2026-08-03",
-    amountCop: 20000,
+    amount: 20000,
     categoryId: "transporte",
     description: "Recarga Cívica",
     createdAt: 1785758460000,
@@ -39,7 +43,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-4",
     date: "2026-08-04",
-    amountCop: 87600,
+    amount: 87600,
     categoryId: "mercado",
     description: "Carulla Oviedo",
     createdAt: 1785844860000,
@@ -47,7 +51,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-5",
     date: "2026-08-05",
-    amountCop: 26900,
+    amount: 26900,
     categoryId: "suscripciones",
     description: "Netflix",
     createdAt: 1785931260000,
@@ -55,7 +59,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-6",
     date: "2026-08-06",
-    amountCop: 15600,
+    amount: 15600,
     categoryId: "restaurantes",
     description: "Café Velvet",
     createdAt: 1786017660000,
@@ -63,14 +67,14 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-7",
     date: "2026-08-07",
-    amountCop: 22000,
+    amount: 22000,
     categoryId: "otros",
     createdAt: 1786104060000,
   },
   {
     id: "seed-8",
     date: "2026-08-08",
-    amountCop: 96300,
+    amount: 96300,
     categoryId: "mercado",
     description: "La Mayorista",
     createdAt: 1786190460000,
@@ -78,7 +82,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-9",
     date: "2026-08-09",
-    amountCop: 34500,
+    amount: 34500,
     categoryId: "restaurantes",
     description: "Salón Málaga",
     createdAt: 1786276860000,
@@ -86,7 +90,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-10",
     date: "2026-08-10",
-    amountCop: 14200,
+    amount: 14200,
     categoryId: "transporte",
     description: "Uber a la oficina",
     createdAt: 1786363260000,
@@ -94,7 +98,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-11",
     date: "2026-08-11",
-    amountCop: 41200,
+    amount: 41200,
     categoryId: "mercado",
     description: "D1 Laureles",
     createdAt: 1786449660000,
@@ -102,7 +106,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-12",
     date: "2026-08-12",
-    amountCop: 52000,
+    amount: 52000,
     categoryId: "restaurantes",
     description: "Mondongo's",
     createdAt: 1786536060000,
@@ -110,7 +114,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-13",
     date: "2026-08-14",
-    amountCop: 16900,
+    amount: 16900,
     categoryId: "suscripciones",
     description: "Spotify Premium",
     createdAt: 1786708860000,
@@ -118,7 +122,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-14",
     date: "2026-08-15",
-    amountCop: 118700,
+    amount: 118700,
     categoryId: "mercado",
     description: "Carulla Oviedo",
     createdAt: 1786795260000,
@@ -126,7 +130,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-15",
     date: "2026-08-16",
-    amountCop: 18300,
+    amount: 18300,
     categoryId: "transporte",
     description: "Uber al centro",
     createdAt: 1786881660000,
@@ -134,7 +138,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-16",
     date: "2026-08-17",
-    amountCop: 45000,
+    amount: 45000,
     categoryId: "transporte",
     description: "Taxi al aeropuerto",
     createdAt: 1786968060000,
@@ -142,7 +146,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-17",
     date: "2026-08-18",
-    amountCop: 16800,
+    amount: 16800,
     categoryId: "restaurantes",
     description: "Café Velvet",
     createdAt: 1787054460000,
@@ -150,7 +154,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-18",
     date: "2026-08-19",
-    amountCop: 63800,
+    amount: 63800,
     categoryId: "otros",
     description: "Farmacia Cruz Verde",
     createdAt: 1787140860000,
@@ -158,7 +162,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-19",
     date: "2026-08-21",
-    amountCop: 28400,
+    amount: 28400,
     categoryId: "restaurantes",
     description: "Al Alma",
     createdAt: 1787313660000,
@@ -166,7 +170,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-20",
     date: "2026-08-22",
-    amountCop: 89900,
+    amount: 89900,
     categoryId: "suscripciones",
     description: "Claro Hogar",
     createdAt: 1787400060000,
@@ -174,7 +178,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-21",
     date: "2026-08-23",
-    amountCop: 74500,
+    amount: 74500,
     categoryId: "mercado",
     description: "D1 Laureles",
     createdAt: 1787486460000,
@@ -182,7 +186,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-22",
     date: "2026-08-24",
-    amountCop: 45000,
+    amount: 45000,
     categoryId: "otros",
     description: "Regalo cumpleaños",
     createdAt: 1787572860000,
@@ -190,7 +194,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-23",
     date: "2026-08-25",
-    amountCop: 13800,
+    amount: 13800,
     categoryId: "transporte",
     description: "Uber a la oficina",
     createdAt: 1787659260000,
@@ -198,7 +202,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-24",
     date: "2026-08-26",
-    amountCop: 12900,
+    amount: 12900,
     categoryId: "suscripciones",
     description: "iCloud",
     createdAt: 1787745660000,
@@ -206,7 +210,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-25",
     date: "2026-08-27",
-    amountCop: 16600,
+    amount: 16600,
     categoryId: "mercado",
     description: "Éxito Poblado",
     createdAt: 1787832060000,
@@ -214,7 +218,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-26",
     date: "2026-08-28",
-    amountCop: 61200,
+    amount: 61200,
     categoryId: "restaurantes",
     description: "Bao Bar",
     createdAt: 1787918460000,
@@ -222,7 +226,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-27",
     date: "2026-08-29",
-    amountCop: 143900,
+    amount: 143900,
     categoryId: "mercado",
     description: "Éxito Poblado",
     createdAt: 1788004860000,
@@ -230,7 +234,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-28",
     date: "2026-08-30",
-    amountCop: 45000,
+    amount: 45000,
     categoryId: "otros",
     description: "Peluquería",
     createdAt: 1788091260000,
@@ -238,7 +242,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-29",
     date: "2026-08-31",
-    amountCop: 20000,
+    amount: 20000,
     categoryId: "transporte",
     description: "Recarga Cívica",
     createdAt: 1788177660000,
@@ -246,7 +250,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-30",
     date: "2026-09-01",
-    amountCop: 63400,
+    amount: 63400,
     categoryId: "mercado",
     description: "La Mayorista",
     createdAt: 1788264120000,
@@ -254,7 +258,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-31",
     date: "2026-09-01",
-    amountCop: 16900,
+    amount: 16900,
     categoryId: "suscripciones",
     description: "Spotify Premium",
     createdAt: 1788264060000,
@@ -262,7 +266,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-32",
     date: "2026-09-02",
-    amountCop: 26900,
+    amount: 26900,
     categoryId: "suscripciones",
     description: "Netflix",
     createdAt: 1788350580000,
@@ -270,7 +274,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-33",
     date: "2026-09-02",
-    amountCop: 42300,
+    amount: 42300,
     categoryId: "restaurantes",
     description: "Crepes & Waffles",
     createdAt: 1788350520000,
@@ -278,7 +282,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-34",
     date: "2026-09-02",
-    amountCop: 20000,
+    amount: 20000,
     categoryId: "transporte",
     description: "Recarga Cívica",
     createdAt: 1788350460000,
@@ -286,7 +290,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-35",
     date: "2026-09-03",
-    amountCop: 48500,
+    amount: 48500,
     categoryId: "mercado",
     description: "Éxito Poblado",
     createdAt: 1788436980000,
@@ -294,7 +298,7 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-36",
     date: "2026-09-03",
-    amountCop: 12000,
+    amount: 12000,
     categoryId: "transporte",
     description: "Uber a la oficina",
     createdAt: 1788436920000,
@@ -302,12 +306,17 @@ export const SEED_EXPENSES: Expense[] = [
   {
     id: "seed-37",
     date: "2026-09-03",
-    amountCop: 18900,
+    amount: 18900,
     categoryId: "restaurantes",
     description: "Café Velvet",
     createdAt: 1788436860000,
   },
 ];
+
+export const SEED_EXPENSES: Expense[] = SEED_ROWS.map((row) => ({
+  ...row,
+  currency: DEFAULT_CURRENCY,
+}));
 
 /** The book opens on the most recent month that has data. */
 export const SEED_MONTH: MonthKey = "2026-09";

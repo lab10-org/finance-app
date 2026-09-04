@@ -49,7 +49,7 @@ for the local stack, and Docker must be running for them.
 
 ## Task overview
 
-- [ ] T1 — An expense carries an amount and a currency
+- [x] T1 — An expense carries an amount and a currency
 - [ ] T2 — `uuid_generate_v7()` and its bit layout
 - [ ] T3 — The `expenses` table, its index and its ownership rules
 - [ ] T4 — The seeded book as a relative template and a trigger
@@ -147,7 +147,7 @@ for the local stack, and Docker must be running for them.
 
 ### T1 — An expense carries an amount and a currency
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 10.1, 10.2, 10.3 — `lib/domain/types.ts`, the data models
 - **Depends on:** none
 - **Objective:** `Expense.amountCop` becomes `amount` plus `currency`
@@ -172,7 +172,24 @@ for the local stack, and Docker must be running for them.
 
 **Decision log**
 
+- `lib/seed.ts` keeps its 37 rows as `SeedRow = Omit<Expense, "currency">` and
+  stamps `DEFAULT_CURRENCY` once in a `.map`, rather than repeating
+  `currency: "COP"` 37 times. It also sets up T4, where those rows become the
+  template the migration renders.
+- `formatAmount` takes the expense, not its number, so the day a second currency
+  exists the change is in one function instead of in every view. `formatCop`
+  stays exported and unchanged — it is what 9.1 and 9.2 are tested against.
+- `ExpenseDraft` drops `currency` entirely (`Omit<Expense, "id" | "createdAt" |
+  "currency">`). Nothing in "la hoja" offers a choice, so letting a draft carry
+  one would invent a decision the interface never makes.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean; `npm test` 341 passing across 40
+files. No expected value in `summary-aggregates.test.ts` or
+`summary-breakdown.test.ts` was touched, which is the evidence that the rename
+changed the field and not the arithmetic. `grep amountCop` over the source tree
+returns nothing outside `docs/specs`.
 
 ### T2 — `uuid_generate_v7()` and its bit layout
 

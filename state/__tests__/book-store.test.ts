@@ -13,7 +13,7 @@ const TODAY = "2026-09-03";
 const initial = () => createInitialState(TODAY);
 
 const draft = (over: Partial<ExpenseDraft> = {}): ExpenseDraft => ({
-  amountCop: 48_500,
+  amount: 48_500,
   categoryId: "mercado",
   date: "2026-09-03",
   ...over,
@@ -82,7 +82,7 @@ describe("register (4.6, 2.13)", () => {
     const added = s.expenses.at(-1)!;
     expect(added.id).toBeTruthy();
     expect(new Set(s.expenses.map((e) => e.id)).size).toBe(s.expenses.length);
-    expect(added.amountCop).toBe(48_500);
+    expect(added.amount).toBe(48_500);
     expect(monthTotal(s.expenses, "2026-09")).toBe(monthTotal(SEED_EXPENSES, "2026-09") + 48_500);
   });
 
@@ -104,10 +104,10 @@ describe("edit (5.3, 5.4)", () => {
     const s = bookReducer(initial(), {
       type: "edit",
       expenseId: target.id,
-      draft: { ...target, amountCop: 60_000, categoryId: "otros" },
+      draft: { ...target, amount: 60_000, categoryId: "otros" },
     });
     const edited = s.expenses.find((e) => e.id === target.id)!;
-    expect(edited.amountCop).toBe(60_000);
+    expect(edited.amount).toBe(60_000);
     expect(edited.categoryId).toBe("otros");
     expect(s.expenses).toHaveLength(SEED_EXPENSES.length);
     expect(s.expenses.indexOf(edited)).toBe(SEED_EXPENSES.indexOf(target));

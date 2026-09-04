@@ -1,5 +1,5 @@
 import { dayOfMonth, previousDay, splitMonth } from "@/lib/domain/dates";
-import type { IsoDate, MonthKey } from "@/lib/domain/types";
+import type { Currency, IsoDate, MonthKey } from "@/lib/domain/types";
 
 /*
  * Every user-visible string derived from a number or a date is produced here.
@@ -30,6 +30,20 @@ function groupThousands(value: number): string {
 /** 1284500 -> "$1.284.500" (9.1, 9.2) */
 export function formatCop(amount: number): string {
   return `$${groupThousands(Math.round(amount))}`;
+}
+
+/**
+ * How an expense's money is written, currency included (10.2, 10.3).
+ *
+ * Every expense in this version is `"COP"`, so this is `formatCop` — but going
+ * through the expense rather than through its number is what makes the day a
+ * second currency arrives a change here instead of a hunt through the views.
+ */
+export function formatAmount(expense: {
+  amount: number;
+  currency: Currency;
+}): string {
+  return formatCop(expense.amount);
 }
 
 /** 9.04 -> "9,0%" (9.3) */

@@ -13,7 +13,7 @@ export function inMonth(expenses: Expense[], month: MonthKey): Expense[] {
 
 /** The month's total (2.1). */
 export function monthTotal(expenses: Expense[], month: MonthKey): number {
-  return inMonth(expenses, month).reduce((sum, e) => sum + e.amountCop, 0);
+  return inMonth(expenses, month).reduce((sum, e) => sum + e.amount, 0);
 }
 
 export interface DailyAverage {
@@ -74,12 +74,12 @@ export function categoryBreakdown(
   month: MonthKey,
 ): BreakdownSlice[] {
   const rows = inMonth(expenses, month);
-  const total = rows.reduce((sum, e) => sum + e.amountCop, 0);
+  const total = rows.reduce((sum, e) => sum + e.amount, 0);
   if (total === 0) return [];
 
   const totals = new Map<CategoryId, number>();
   for (const e of rows) {
-    totals.set(e.categoryId, (totals.get(e.categoryId) ?? 0) + e.amountCop);
+    totals.set(e.categoryId, (totals.get(e.categoryId) ?? 0) + e.amount);
   }
 
   return [...totals.entries()]
@@ -131,7 +131,7 @@ export function groupByDay(
     .sort(([a], [b]) => (a < b ? 1 : -1))
     .map(([date, dayExpenses]) => ({
       date,
-      subtotal: dayExpenses.reduce((sum, e) => sum + e.amountCop, 0),
+      subtotal: dayExpenses.reduce((sum, e) => sum + e.amount, 0),
       expenses: [...dayExpenses].sort((a, b) => b.createdAt - a.createdAt),
     }));
 }

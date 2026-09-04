@@ -11,6 +11,7 @@ import {
 } from "react";
 
 import { monthKeyOf, todayIso } from "@/lib/domain/dates";
+import { DEFAULT_CURRENCY } from "@/lib/domain/types";
 import type {
   CategoryFilterValue,
   Expense,
@@ -108,7 +109,10 @@ export function bookReducer(state: BookState, action: BookAction): BookState {
     case "register": {
       const expense: Expense = {
         id: newId(),
-        amountCop: action.draft.amountCop,
+        amount: action.draft.amount,
+        // The one place an expense is built, and so the one place the currency
+        // is decided (10.3).
+        currency: DEFAULT_CURRENCY,
         categoryId: action.draft.categoryId,
         ...(cleanDescription(action.draft.description) === undefined
           ? {}
@@ -130,7 +134,7 @@ export function bookReducer(state: BookState, action: BookAction): BookState {
         e.id === action.expenseId
           ? {
               ...e,
-              amountCop: action.draft.amountCop,
+              amount: action.draft.amount,
               categoryId: action.draft.categoryId,
               description: cleanDescription(action.draft.description),
               date: action.draft.date,
