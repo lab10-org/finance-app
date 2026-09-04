@@ -158,6 +158,84 @@ npm run typecheck  # tsc --noEmit
 npm test           # vitest run
 ```
 
+## Despliegue en Cloudflare
+
+La app corre en **Cloudflare Workers** con
+[`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare), que es la
+integración propia de Cloudflare para Next.
+
+No hay versión estática posible: `proxy.ts` refresca la sesión de Supabase en
+cada request, así que siempre hay servidor. Por eso Workers y no Pages con
+`output: export`.
+
+```bash
+npm run cf:build     # next build + adapta la salida a Workers
+npm run cf:preview   # lo anterior + wrangler dev (el Worker real, local)
+npm run cf:deploy    # lo anterior + publica
+npm run cf:typegen   # regenera los tipos de los bindings
+```
+
+`cf:preview` es el paso que vale la pena no saltarse: levanta el mismo workerd
+que corre en producción, así que un fallo de compatibilidad aparece en tu
+máquina y no después del despliegue.
+
+### Variables de entorno
+
+```bash
+cp .env.production.example .env.production.local
+```
+
+Los dos valores salen del proyecto alojado en supabase.com (Project Settings →
+Data API y → API Keys), **no** de `supabase status`.
+
+Esto no es opcional ni cosmético. `.env.local` —el del stack local— también se
+lee cuando `NODE_ENV` es `production`, y el orden de Next es:
+
+```
+process.env → .env.production.local → .env.local → .env.production → .env
+```
+
+Sin `.env.production.local`, el build se llevaría `http://127.0.0.1:54321`
+horneado dentro del bundle del navegador y la app desplegada intentaría
+autenticar contra un puerto de tu portátil.
+
+Son variables `NEXT_PUBLIC_*`: se sustituyen **en tiempo de build**. Ponerlas
+como `vars` o `secrets` de Wrangler no sirve de nada — tienen que existir en el
+ambiente que corre `npm run cf:build`.
+
+### El proyecto alojado de Supabase
+
+El stack local y el proyecto en la nube son dos bases distintas. Lo que está en
+`supabase/` no llega solo:
+
+- **Las migraciones.** `supabase link --project-ref <ref>` y luego
+  `supabase db push`. Sin esto la cuenta entra pero el libro revienta: la tabla
+  `expenses` no existe.
+- **La configuración de auth.** `supabase/config.toml` es **sólo local**;
+  `db push` no la sube. En el dashboard hay que repetir a mano el largo del
+  código (6), su vigencia (600s), `max_frequency` (60s) y el `site_url`, que
+  pasa a ser la URL del Worker.
+- **La plantilla del correo.** `supabase/templates/magic_link.html` es la que
+  imprime el código de seis dígitos. La plantilla por defecto del dashboard
+  manda un **enlace**, que es justamente lo que esta app decidió no usar
+  (ver "Por qué un código y no un enlace"). Hay que pegarla en
+  Authentication → Email Templates.
+- **El correo saliente.** El SMTP que trae un proyecto de Supabase por defecto
+  está limitado a unos pocos mensajes por hora y sólo a direcciones del equipo.
+  Para uso real hay que configurar un SMTP propio; si no, el código no llega.
+
+### Middleware en Node.js
+
+El build imprime este aviso, y es cierto:
+
+```
+Node.js middleware support is experimental in cloudflare
+```
+
+`proxy.ts` corre en el runtime de Node.js y Next 16 no permite configurarlo de
+otra forma. Funciona —la puerta de la sesión redirige bien sobre workerd— pero
+es la pieza a mirar primero si algo se rompe tras actualizar el adaptador.
+
 ## Documentación
 
 Cada feature se especifica antes de construirse, en
