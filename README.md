@@ -141,6 +141,38 @@ supabase db reset && node scripts/manual-pass.mjs
 No corre con `npm test` a propósito: depende de Docker y de una base limpia, y un
 test que a veces no puede correr es un test que la gente aprende a ignorar.
 
+### Las pruebas end-to-end
+
+Playwright maneja un Chromium de verdad contra la app corriendo y contra el
+stack local. Es el único nivel donde existen el proxy, las cookies de sesión y
+GoTrue, así que es el único que puede comprobar que la puerta está cerrada de
+verdad. Lo que ya prueba vitest a solas no se repite acá.
+
+```bash
+npx playwright install chromium   # una sola vez, baja el navegador
+npm run test:e2e                  # la suite completa
+npm run test:e2e:ui               # el modo interactivo, para escribir pruebas
+npm run test:e2e:report           # el reporte HTML de la última corrida
+```
+
+Necesita lo mismo que la app: el stack arriba (`supabase start`) y `.env.local`
+lleno. El servidor de desarrollo lo levanta Playwright solo; si ya tienes uno en
+el 3000, lo reusa.
+
+Las pruebas entran **leyendo el código del correo en Mailpit**, igual que una
+persona: `e2e/support/mailpit.ts` consulta su API y saca los seis dígitos. No
+hay atajo con la llave de servicio, y por eso lo que la suite prueba es el flujo
+que la gente realmente usa.
+
+Cada prueba se inventa su propia dirección de correo, así que estrena cuenta y
+libro vacío. De ahí salen dos reglas que conviene no romper: **nunca vaciar el
+buzón de Mailpit** —sólo se puede vaciar entero, y en paralelo una prueba se
+llevaría por delante los correos de las otras— y **nunca reusar una dirección
+fija**, que volvería a una prueba dependiente de lo que dejó la anterior.
+
+Los archivos son `e2e/*.spec.ts`; vitest sólo mira los `__tests__/*.test.ts`, así
+que los dos corredores no se pisan.
+
 ### El esquema, en una frase
 
 Una sola tabla, `expenses`, con `user_id` y RLS de dueño único. Las categorías
@@ -156,6 +188,7 @@ npm run dev        # servidor de desarrollo
 npm run build      # build de producción
 npm run typecheck  # tsc --noEmit
 npm test           # vitest run
+npm run test:e2e   # playwright test
 ```
 
 ## Despliegue en Cloudflare

@@ -21,6 +21,6 @@ export default defineConfig({
      * top-level pattern does not reach them — the suite then tries to run the
      * `__tests__` folders shipped inside other people's packages.
      */
-    exclude: ["**/node_modules/**", "**/.next/**", ".claude/worktrees/**"],
+    exclude: ["**/node_modules/**", "**/.next/**", ".claude/worktrees/**", "e2e/**"],
   },
 });
