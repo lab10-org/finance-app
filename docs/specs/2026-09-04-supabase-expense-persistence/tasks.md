@@ -54,7 +54,7 @@ for the local stack, and Docker must be running for them.
 - [x] T3 — The `expenses` table, its index and its ownership rules
 - [x] T4 — The seeded book as a relative template and a trigger
 - [x] T5 — The row mapper and the unknown category
-- [ ] T6 — The `ExpenseRepository` seam and the widened import guard
+- [x] T6 — The `ExpenseRepository` seam and the widened import guard
 - [ ] T7 — The window read on the server, handed down as props
 - [ ] T8 — The store keeps months, statuses and navigation
 - [ ] T9 — Optimistic registration and the adoption of the real id
@@ -430,7 +430,7 @@ one.
 
 ### T6 — The `ExpenseRepository` seam and the widened import guard
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 1.1, 1.3, 2.2, 3.3, 5.8, 6.7, 6.10 — `lib/expenses/repository.ts`,
   `app/__tests__/no-stray-colours.test.ts`
 - **Depends on:** T3, T5
@@ -460,7 +460,37 @@ one.
 
 **Decision log**
 
+- **The "persists no expense in the browser" clause was KEPT, against the plan.**
+  The design proposed deleting it as having lost its subject. It has not: expenses
+  going to a database is exactly why nothing should also be cached in
+  `localStorage`. It still passes and still protects something real.
+- The `describe` around it was renamed instead. "No expense data leaves the
+  device" stopped being true the moment this feature existed, and a green
+  assertion under a false heading is worse than no assertion.
+- **Widening the Supabase whitelist came with a second, narrower assertion.**
+  `lib/expenses` and `app/page.tsx` may import the client; `components` and
+  `state` still may not, and a new test says so. Widening a guard without
+  bounding the widening is how a guard quietly stops guarding.
+- `readWindow` uses a half-open range (`gte` first day of the previous month,
+  `lt` first day of the next) instead of computing a last day. February needs no
+  special case, and the year boundary is covered by a test.
+- Idempotency is handled by catching `23505` and reading the row back by its
+  `client_op_id`, rather than by `upsert(..., { ignoreDuplicates: true })` —
+  which returns no row on conflict and would need the same follow-up read anyway,
+  with the conflict target spelled out in a string.
+- `update` deliberately omits `client_op_id`: it identifies the confirmation that
+  created the row, not the row, and rewriting it would break the idempotency of a
+  later retry. There is a test for the omission.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` **392 passing across 43
+files**. 17 new repository assertions cover the window's range and its year
+boundary, the exclusion of soft-deleted rows, the ordering, the absence of any
+`user_id` filter, the idempotent retry, and that no code path in the repository
+ever issues a `DELETE`. `fake-repository.ts` ships with it: an in-memory
+implementation with deferrable writes, which is what makes the optimistic
+behaviour of T9-T11 testable at all.
 
 ### T7 — The window read on the server, handed down as props
 
