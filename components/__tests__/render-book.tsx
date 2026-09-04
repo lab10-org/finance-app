@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactElement } from "react";
 
 import { seededBook } from "@/lib/domain/__tests__/fixtures";
+import { createFakeRepository } from "@/lib/expenses/__tests__/fake-repository";
 import type { InitialBook } from "@/lib/expenses/initial-book";
 import { BookProvider, useBook } from "@/state/book-store";
 
@@ -13,7 +14,12 @@ export function renderInBook(ui: ReactElement, today: string = TODAY) {
   return {
     user: userEvent.setup(),
     ...render(
-      <BookProvider initial={initialBook({ today })}>{ui}</BookProvider>,
+      <BookProvider
+        initial={initialBook({ today })}
+        repository={createFakeRepository(seededBook())}
+      >
+        {ui}
+      </BookProvider>,
     ),
   };
 }

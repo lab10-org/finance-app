@@ -57,8 +57,8 @@ for the local stack, and Docker must be running for them.
 - [x] T6 — The `ExpenseRepository` seam and the widened import guard
 - [x] T7 — The window read on the server, handed down as props
 - [x] T8 — The store keeps months, statuses and navigation
-- [ ] T9 — Optimistic registration and the adoption of the real id
-- [ ] T10 — Editing, deleting and undoing reach the database
+- [x] T9 — Optimistic registration and the adoption of the real id
+- [x] T10 — Editing, deleting and undoing reach the database
 - [ ] T11 — Re-reading the window and merging it with what is in flight
 - [ ] T12 — What the book shows while loading, and when a write fails
 - [ ] T13 — Document the migrations and run the manual pass
@@ -614,7 +614,7 @@ the previous month at exactly `$1.412.300`.
 
 ### T9 — Optimistic registration and the adoption of the real id
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 7.1, 7.2, 7.3, 7.4,
   10.4 —
   `lib/expenses/op-queue.ts`, `state/book-actions.ts`, `bookReducer`
@@ -643,11 +643,46 @@ the previous month at exactly `$1.412.300`.
 
 **Decision log**
 
+- **T9 and T10 landed together.** The op-queue, the failure state and the retry
+  are one mechanism; splitting registration from editing and deleting would have
+  meant writing the same plumbing twice and testing half of it. T10's own entry
+  records only what is specific to it.
+- **`clientOpId` is generated once per confirmation and captured by the retry
+  closure.** That is the whole of 5.7/5.8, and it is verified by mutation: making
+  the retry generate a fresh key instead makes exactly two tests fail — the retry
+  test and the duplicate test — so those assertions are load-bearing rather than
+  decorative.
+- **The op-queue resolves ids at EXECUTION time, not when the operation was
+  queued.** An edit issued while the insert is still in flight is queued behind
+  it and, by the time it runs, `queue.resolve()` returns the real id. This is why
+  7.1 can promise live controls without 7.3 being at risk.
+- A task that fails does not cancel what was queued behind it: the chain tracks
+  completion, not success. Otherwise one failed write would silently swallow
+  every action the user took after it.
+- **`BookProvider` requires a repository rather than defaulting to the browser
+  one.** There is no such thing as a book that quietly does not persist, and a
+  default would hide the day something mounted without it. `lib/expenses/browser.ts`
+  builds the real one, so `state/` and `components/` still never import Supabase
+  and the guard test still holds.
+- Provisional rows are indistinguishable from stored ones on screen — no spinner,
+  no dimming — because 7.1 says the controls stay live and look the same. The
+  only difference is the `local-` id, which never leaves the store.
+
 **Outcome**
+
+Done and verified. `npm run typecheck` clean, `npm test` **467 passing across 48
+files**, `npm run build` succeeds. 33 new assertions across `op-queue.test.ts`
+and `optimistic-write.test.ts` cover: the row appears and the sheet closes before
+the write is awaited; the header counts the unconfirmed expense; the real id is
+adopted without the row moving or a value changing; a failed write removes the
+row, keeps the draft and offers a retry that succeeds; the retry reuses the key
+so a landed write is not duplicated; two genuinely identical expenses stay two;
+and an edit or a delete issued while the insert is in flight reaches that row,
+with its real id, and no other.
 
 ### T10 — Editing, deleting and undoing reach the database
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 1.4, 1.5, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 7.5 —
   `state/book-actions.ts`, `ExpenseRepository.softDelete` / `restore`
 - **Depends on:** T9
@@ -672,7 +707,27 @@ the previous month at exactly `$1.412.300`.
 
 **Decision log**
 
+- **Implemented alongside T9**, which owns the shared machinery. What is specific
+  to this task:
+- **The soft delete is sent immediately, not when the undo window expires.** 6.6
+  requires that closing the tab during the window leaves the deletion final, and
+  a statement waiting on a timer cannot promise that. Undo therefore issues a
+  `restore` that clears `deleted_at`, which is a second round trip — the honest
+  cost of the guarantee. A test asserts the row is already marked before the
+  timer has run.
+- A failed edit dispatches `replaceExpense` with the values captured BEFORE the
+  optimistic edit, so the book returns to what is actually stored (6.2) rather
+  than to a guess reconstructed from the draft.
+- 11.5 needs no code here: `draftToInsert` normalises the category on the way
+  out (T5), so editing a row whose stored category is unknown writes `"otros"`.
+
 **Outcome**
+
+Done and verified, in the same run as T9. Covered by
+`optimistic-write.test.ts`: an edit persists; a failed edit restores the previous
+values and reports; the deletion is marked at once rather than on the timer; undo
+clears the mark in the database and puts the row back; a failed deletion returns
+the expense to the book; and a failed deletion offers a retry that succeeds.
 
 ### T11 — Re-reading the window and merging it with what is in flight
 

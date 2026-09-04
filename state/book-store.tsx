@@ -20,6 +20,8 @@ import type {
   MonthKey,
 } from "@/lib/domain/types";
 import type { InitialBook } from "@/lib/expenses/initial-book";
+import { createOpQueue, type OpQueue } from "@/lib/expenses/op-queue";
+import type { ExpenseRepository } from "@/lib/expenses/repository";
 
 export type SheetState =
   | { mode: "closed" }
@@ -32,6 +34,23 @@ export interface MonthSlice {
   status: MonthStatus;
   /** Empty while loading or after a failure — never mistaken for "no spending". */
   expenses: Expense[];
+}
+
+/**
+ * A write that failed, held so the user can be told and can try again
+ * (5.4, 5.5, 6.9, 7.5).
+ *
+ * `retry` is the operation itself, ready to run unchanged — for a registration
+ * that means the same `clientOpId`, which is what stops a retry from creating a
+ * second expense (5.7).
+ */
+export interface WriteFailure {
+  /** What the user is told, in Spanish. */
+  message: string;
+  /** Re-runs the write exactly as it was issued. */
+  retry: () => Promise<void>;
+  /** The draft that failed, so "la hoja" can reopen with it (5.4). */
+  draft?: ExpenseDraft;
 }
 
 export interface BookState {
@@ -48,6 +67,8 @@ export interface BookState {
   /** The undo buffer: an expense deleted but still recoverable (6.1, 6.3). */
   pendingDeletion: Expense | null;
   today: IsoDate;
+  /** The most recent failed write, or null. */
+  failure: WriteFailure | null;
 }
 
 export type BookAction =
@@ -65,7 +86,9 @@ export type BookAction =
   | { type: "replaceExpense"; expense: Expense }
   | { type: "delete"; expenseId: string }
   | { type: "undoDelete" }
-  | { type: "finalizeDelete" };
+  | { type: "finalizeDelete" }
+  | { type: "writeFailed"; failure: WriteFailure }
+  | { type: "dismissFailure" };
 
 /** How long a deleted expense stays recoverable (6.3). */
 export const UNDO_WINDOW_MS = 5000;
@@ -221,6 +244,7 @@ export function createInitialState(initial: InitialBook): BookState {
     sheet: { mode: "closed" },
     pendingDeletion: null,
     today: initial.today,
+    failure: null,
   };
 }
 
@@ -371,6 +395,12 @@ export function bookReducer(state: BookState, action: BookAction): BookState {
     case "finalizeDelete":
       return state.pendingDeletion === null ? state : { ...state, pendingDeletion: null };
 
+    case "writeFailed":
+      return { ...state, failure: action.failure };
+
+    case "dismissFailure":
+      return state.failure === null ? state : { ...state, failure: null };
+
     default:
       return state;
   }
@@ -383,16 +413,29 @@ export function bookReducer(state: BookState, action: BookAction): BookState {
 const BookContext = createContext<{
   state: BookState;
   dispatch: Dispatch<BookAction>;
+  repository: ExpenseRepository;
+  queue: OpQueue;
 } | null>(null);
 
 export function BookProvider({
   children,
   initial,
+  repository,
 }: {
   children: ReactNode;
   initial: InitialBook;
+  /**
+   * Where writes go. Required rather than defaulted: there is no such thing as
+   * a book that quietly does not persist, and a default would hide the day one
+   * was mounted without it.
+   */
+  repository: ExpenseRepository;
 }) {
   const [state, dispatch] = useReducer(bookReducer, initial, createInitialState);
+
+  // One queue for the life of the provider: it is what remembers that a
+  // provisional id became a real one (7.3).
+  const queue = useMemo(() => createOpQueue(), []);
 
   /*
    * The undo timer lives here rather than in the reducer: a reducer that
@@ -404,7 +447,10 @@ export function BookProvider({
     return () => clearTimeout(timer);
   }, [state.pendingDeletion]);
 
-  const value = useMemo(() => ({ state, dispatch }), [state]);
+  const value = useMemo(
+    () => ({ state, dispatch, repository, queue }),
+    [state, repository, queue],
+  );
 
   return <BookContext.Provider value={value}>{children}</BookContext.Provider>;
 }

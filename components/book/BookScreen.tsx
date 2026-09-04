@@ -12,7 +12,8 @@ import {
   monthTotal,
   topCategory,
 } from "@/lib/domain/summary";
-import { newLocalId, useBook, windowExpenses } from "@/state/book-store";
+import { useBookActions } from "@/state/book-actions";
+import { useBook, windowExpenses } from "@/state/book-store";
 
 import { AccountControl } from "./AccountControl";
 import { MonthHeader } from "./MonthHeader";
@@ -26,7 +27,9 @@ import { RegisterButton } from "./RegisterButton";
 import styles from "./BookScreen.module.css";
 
 export default function BookScreen() {
-  const { state, dispatch } = useBook();
+  const context = useBook();
+  const { state, dispatch } = context;
+  const actions = useBookActions(context);
   const { viewedMonth, filter, today, sheet: sheetState } = state;
   // The window flattened: every pure function below still sees a plain list.
   const expenses = windowExpenses(state, viewedMonth);
@@ -62,7 +65,7 @@ export default function BookScreen() {
 
   const canGoForward = viewedMonth < monthKeyOf(today);
   const goto = (delta: number) =>
-    dispatch({ type: "setMonth", month: addMonths(viewedMonth, delta) });
+    void actions.goTo(addMonths(viewedMonth, delta));
 
   return (
     <div className={styles.screen}>
@@ -121,21 +124,21 @@ export default function BookScreen() {
           key={editing.id}
           mode="edit"
           expense={editing}
-          onSubmit={(draft) => dispatch({ type: "edit", expenseId: editing.id, draft })}
-          onDelete={() => dispatch({ type: "delete", expenseId: editing.id })}
+          onSubmit={(draft) => void actions.edit(editing.id, draft)}
+          onDelete={() => void actions.remove(editing.id)}
           onDismiss={closeSheet}
         />
       )}
 
       {state.pendingDeletion && (
-        <UndoToast onUndo={() => dispatch({ type: "undoDelete" })} />
+        <UndoToast onUndo={() => void actions.undo()} />
       )}
 
       {sheetState.mode === "create" && (
         <ExpenseSheet
           mode="create"
           defaultDate={defaultDate}
-          onSubmit={(draft) => dispatch({ type: "register", draft, id: newLocalId() })}
+          onSubmit={(draft) => void actions.register(draft)}
           onDismiss={closeSheet}
         />
       )}

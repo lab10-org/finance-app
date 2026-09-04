@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { seededBook } from "@/lib/domain/__tests__/fixtures";
 import { createFakeRepository } from "@/lib/expenses/__tests__/fake-repository";
+import { createOpQueue } from "@/lib/expenses/op-queue";
 import { goToMonth, loadWindow, needsLoad, refreshWindow } from "@/state/book-actions";
 import { bookReducer, createInitialState, type BookAction, type BookState } from "@/state/book-store";
 
@@ -9,6 +10,7 @@ const TODAY = "2026-09-04";
 
 function harness(expenses = seededBook("2026-09")) {
   const repository = createFakeRepository(expenses);
+  const queue = createOpQueue();
   let state: BookState = createInitialState({
     month: "2026-09",
     today: TODAY,
@@ -24,10 +26,11 @@ function harness(expenses = seededBook("2026-09")) {
 
   return {
     repository,
+    queue,
     dispatched,
     dispatch,
     get context() {
-      return { state, dispatch, repository };
+      return { state, dispatch, repository, queue };
     },
     get state() {
       return state;

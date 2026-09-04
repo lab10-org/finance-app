@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { groupByDay } from "@/lib/domain/summary";
 import { seededBook } from "@/lib/domain/__tests__/fixtures";
+import { createFakeRepository } from "@/lib/expenses/__tests__/fake-repository";
 import {
   BookProvider,
   UNDO_WINDOW_MS,
@@ -93,7 +94,7 @@ describe("the 5-second window (6.4)", () => {
 
   it("finalises the deletion by itself after the window closes", () => {
     render(
-      <BookProvider initial={bookFrom(seededBook(), TODAY)}>
+      <BookProvider initial={bookFrom(seededBook(), TODAY)} repository={createFakeRepository()}>
         <Probe />
       </BookProvider>,
     );
