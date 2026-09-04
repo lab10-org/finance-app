@@ -4,16 +4,17 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { monthKeyOf } from "@/lib/domain/dates";
-import { monthTotal } from "@/lib/domain/summary";
+import { groupByDay, monthTotal } from "@/lib/domain/summary";
 import type { ExpenseDraft } from "@/lib/domain/types";
-import { SEED_EXPENSES, SEED_MONTH } from "@/lib/seed";
-import { bookReducer, createInitialState } from "@/state/book-store";
+import { seededBook } from "@/lib/domain/__tests__/fixtures";
+import { bookFrom, bookReducer, createInitialState, windowExpenses } from "@/state/book-store";
 
 const TODAY = "2026-09-03";
-const initial = () => createInitialState(TODAY);
+const SEEDED = seededBook();
+const initial = () => createInitialState(bookFrom(seededBook(), TODAY));
 
 const draft = (over: Partial<ExpenseDraft> = {}): ExpenseDraft => ({
-  amountCop: 48_500,
+  amount: 48_500,
   categoryId: "mercado",
   date: "2026-09-03",
   ...over,
@@ -22,11 +23,11 @@ const draft = (over: Partial<ExpenseDraft> = {}): ExpenseDraft => ({
 describe("initial state (1.1, 10.1)", () => {
   it("opens on the seeded month with no filter and no sheet", () => {
     const s = initial();
-    expect(s.viewedMonth).toBe(SEED_MONTH);
+    expect(s.viewedMonth).toBe("2026-09");
     expect(s.filter).toBe("todas");
     expect(s.sheet).toEqual({ mode: "closed" });
     expect(s.pendingDeletion).toBeNull();
-    expect(s.expenses).toHaveLength(SEED_EXPENSES.length);
+    expect(windowExpenses(s, s.viewedMonth)).toHaveLength(SEEDED.length);
     expect(s.today).toBe(TODAY);
   });
 });
@@ -74,43 +75,57 @@ describe("the sheet (4.1, 5.1)", () => {
 describe("register (4.6, 2.13)", () => {
   it("appends the expense, gives it an id, and closes the sheet", () => {
     const open = bookReducer(initial(), { type: "openSheet", sheet: { mode: "create" } });
-    const s = bookReducer(open, { type: "register", draft: draft() });
+    const s = bookReducer(open, { type: "register", draft: draft(), id: "local-test" });
 
-    expect(s.expenses).toHaveLength(SEED_EXPENSES.length + 1);
+    expect(windowExpenses(s, s.viewedMonth)).toHaveLength(SEEDED.length + 1);
     expect(s.sheet).toEqual({ mode: "closed" });
 
-    const added = s.expenses.at(-1)!;
+    const added = windowExpenses(s, s.viewedMonth).at(-1)!;
     expect(added.id).toBeTruthy();
-    expect(new Set(s.expenses.map((e) => e.id)).size).toBe(s.expenses.length);
-    expect(added.amountCop).toBe(48_500);
-    expect(monthTotal(s.expenses, "2026-09")).toBe(monthTotal(SEED_EXPENSES, "2026-09") + 48_500);
+    expect(new Set(windowExpenses(s, s.viewedMonth).map((e) => e.id)).size).toBe(windowExpenses(s, s.viewedMonth).length);
+    expect(added.amount).toBe(48_500);
+    expect(monthTotal(windowExpenses(s, s.viewedMonth), "2026-09")).toBe(monthTotal(SEEDED, "2026-09") + 48_500);
   });
 
   it("never stores an empty description", () => {
-    const s = bookReducer(initial(), { type: "register", draft: draft({ description: "  " }) });
-    expect(s.expenses.at(-1)!.description).toBeUndefined();
+    const s = bookReducer(initial(), { type: "register", draft: draft({ description: "  " }), id: "local-test" });
+    expect(windowExpenses(s, s.viewedMonth).at(-1)!.description).toBeUndefined();
   });
 
   it("follows the expense when it is dated outside the viewed month", () => {
-    const s = bookReducer(initial(), { type: "register", draft: draft({ date: "2026-07-04" }) });
+    const s = bookReducer(initial(), { type: "register", draft: draft({ date: "2026-07-04" }), id: "local-test" });
     expect(s.viewedMonth).toBe("2026-07");
   });
 });
 
 describe("edit (5.3, 5.4)", () => {
-  const target = SEED_EXPENSES.find((e) => e.description === "Éxito Poblado" && e.date === "2026-09-03")!;
+  const target = SEEDED.find((e) => e.description === "Éxito Poblado" && e.date === "2026-09-03")!;
 
   it("updates the expense in place, keeping its id and position", () => {
     const s = bookReducer(initial(), {
       type: "edit",
       expenseId: target.id,
-      draft: { ...target, amountCop: 60_000, categoryId: "otros" },
+      draft: { ...target, amount: 60_000, categoryId: "otros" },
     });
-    const edited = s.expenses.find((e) => e.id === target.id)!;
-    expect(edited.amountCop).toBe(60_000);
+    const edited = windowExpenses(s, s.viewedMonth).find((e) => e.id === target.id)!;
+    expect(edited.amount).toBe(60_000);
     expect(edited.categoryId).toBe("otros");
-    expect(s.expenses).toHaveLength(SEED_EXPENSES.length);
-    expect(s.expenses.indexOf(edited)).toBe(SEED_EXPENSES.indexOf(target));
+    expect(windowExpenses(s, s.viewedMonth)).toHaveLength(SEEDED.length);
+
+    /*
+     * "In place" means where the user sees it, not where it sits in an array.
+     * The store now removes and re-inserts on edit, because an edit may move an
+     * expense to another month; `createdAt` is preserved, and that is what
+     * `groupByDay` orders by, so the row does not move on screen.
+     */
+    const day = groupByDay(windowExpenses(s, s.viewedMonth), "2026-09", "todas").find(
+      (d) => d.date === "2026-09-03",
+    )!;
+    const before = groupByDay(windowExpenses(initial(), "2026-09"), "2026-09", "todas").find(
+      (d) => d.date === "2026-09-03",
+    )!;
+
+    expect(day.expenses.map((e) => e.id)).toEqual(before.expenses.map((e) => e.id));
   });
 
   it("navigates the book when the edit moves the expense to another month", () => {
@@ -120,7 +135,7 @@ describe("edit (5.3, 5.4)", () => {
       draft: { ...target, date: "2026-08-28" },
     });
     expect(s.viewedMonth).toBe("2026-08");
-    expect(monthKeyOf(s.expenses.find((e) => e.id === target.id)!.date)).toBe("2026-08");
+    expect(monthKeyOf(windowExpenses(s, s.viewedMonth).find((e) => e.id === target.id)!.date)).toBe("2026-08");
   });
 });
 

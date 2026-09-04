@@ -21,10 +21,23 @@ export interface Category {
   colorToken: string;
 }
 
+/**
+ * ISO 4217. Stored alongside every amount so the schema does not have to change
+ * the day a second one appears — but this version only ever writes `"COP"`
+ * (10.2, 10.3), and no total ever mixes two.
+ */
+export type Currency = "COP";
+
+export const DEFAULT_CURRENCY: Currency = "COP";
+
 export interface Expense {
   id: string;
-  /** Whole Colombian pesos, always >= 1. */
-  amountCop: number;
+  /**
+   * The amount in `currency`. Stored as `numeric(14,2)`, so it may arrive with
+   * decimals even though every COP amount the app writes is whole (10.1).
+   */
+  amount: number;
+  currency: Currency;
   categoryId: CategoryId;
   /** Absent when the user did not write one — never an empty string (1.8). */
   description?: string;
@@ -33,7 +46,12 @@ export interface Expense {
   createdAt: number;
 }
 
-export type ExpenseDraft = Omit<Expense, "id" | "createdAt">;
+/**
+ * What "la hoja" produces. `currency` is absent on purpose: nothing in the
+ * interface offers a choice, so it is stamped as `DEFAULT_CURRENCY` at the one
+ * place an expense is built (10.3).
+ */
+export type ExpenseDraft = Omit<Expense, "id" | "createdAt" | "currency">;
 
 /** The category filter, where `"todas"` means no filter is applied. */
 export type CategoryFilterValue = CategoryId | "todas";

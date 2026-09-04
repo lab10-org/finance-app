@@ -33,7 +33,9 @@ export function MonthHeader({
         <button type="button" className={styles.step} aria-label="Mes anterior" onClick={onPrev}>
           <ChevronLeft size={15} strokeWidth={2} aria-hidden />
         </button>
-        <span className={styles.title}>{formatMonthTitle(month)}</span>
+        <span className={styles.title} data-testid="month-title">
+          {formatMonthTitle(month)}
+        </span>
         <button
           type="button"
           className={styles.step}

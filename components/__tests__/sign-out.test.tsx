@@ -6,14 +6,16 @@ import BookScreen from "@/components/book/BookScreen";
 import { BookProvider } from "@/state/book-store";
 import { SessionProvider } from "@/state/session-context";
 
-import { TODAY } from "./render-book";
+import { createFakeRepository } from "@/lib/expenses/__tests__/fake-repository";
+
+import { initialBook } from "./render-book";
 
 const EMAIL = "juanse@lab10.ai";
 
 function renderSignedIn(signOut = vi.fn().mockResolvedValue(undefined)) {
   const ui: ReactElement = (
     <SessionProvider value={{ user: { id: "u-1", email: EMAIL }, signOut }}>
-      <BookProvider today={TODAY}>
+      <BookProvider initial={initialBook()} repository={createFakeRepository()}>
         <BookScreen />
       </BookProvider>
     </SessionProvider>
@@ -34,7 +36,7 @@ describe("who is signed in (6.1)", () => {
     // What keeps every v1 test green: `useSession()` returns null outside a
     // provider and the control simply is not there.
     render(
-      <BookProvider today={TODAY}>
+      <BookProvider initial={initialBook()} repository={createFakeRepository()}>
         <BookScreen />
       </BookProvider>,
     );

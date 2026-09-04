@@ -69,15 +69,26 @@ describe("no colour outside the token table (11.4)", () => {
 const EXPENSE_DIRS = ["components/book", "components/sheet", "state", "lib/domain"];
 const EXPENSE_FILES = ["lib/seed.ts"];
 
-/** The only places a Supabase import may legitimately appear. */
+/** The modules that exist to talk to the auth service. */
 const AUTH_DIRS = ["lib/supabase", "lib/auth", "components/entrada"];
+
+/** Every place a Supabase import may legitimately appear. */
+const SUPABASE_DIRS = [...AUTH_DIRS, "lib/expenses"];
+const SUPABASE_FILES = ["app/page.tsx"];
 
 const expenseSources = () => [
   ...EXPENSE_DIRS.flatMap((dir) => walk(resolve(ROOT, dir), /\.tsx?$/)),
   ...EXPENSE_FILES.map((file) => resolve(ROOT, file)),
 ];
 
-describe("no expense data leaves the device (10.5)", () => {
+/*
+ * Expenses now live in the database, so "no expense data leaves the device" is
+ * no longer true and no longer the point. What these assertions protect is the
+ * shape of the route out: expenses reach Supabase through `lib/expenses` and
+ * nothing else, the components and the reducer open no transport of their own,
+ * and nothing caches a peso in the browser.
+ */
+describe("expenses leave the device only through the repository", () => {
   it("opens no transport from the modules that own expenses", () => {
     const offenders = expenseSources().flatMap((f) => {
       const source = readFileSync(f, "utf8");
@@ -102,10 +113,27 @@ describe("no expense data leaves the device (10.5)", () => {
     expect(offenders).toEqual([]);
   });
 
-  it("reaches Supabase from nowhere but the auth modules", () => {
-    // The exemption is a whitelist, not a hole: if an expense module ever
-    // imports the client directly, this is what says so.
+  it("reaches Supabase from nowhere but the auth and expense modules", () => {
+    // The exemption is a whitelist, not a hole. `lib/expenses` joined it when
+    // expenses moved into the database: it is the one place that may build a
+    // statement, which is what keeps the query shape and the RLS assumption in
+    // a single reviewable file. `app/page.tsx` joined it because the window is
+    // read on the server, before the book is painted (3.1).
     const offenders = files(/\.tsx?$/)
+      .filter((f) => /from\s+["'](@supabase\/|@\/lib\/supabase)/.test(readFileSync(f, "utf8")))
+      .filter((f) => !SUPABASE_DIRS.some((dir) => f.includes(resolve(ROOT, dir))))
+      .filter((f) => !SUPABASE_FILES.some((file) => f === resolve(ROOT, file)))
+      .map((f) => f.replace(`${ROOT}/`, ""));
+
+    expect(offenders).toEqual([]);
+  });
+
+  it("keeps the components and the store away from Supabase", () => {
+    // Widening the list above must not quietly widen it for everything: the
+    // book's components and its reducer still reach the database only through
+    // the repository they are given.
+    const offenders = ["components", "state"]
+      .flatMap((dir) => walk(resolve(ROOT, dir), /\.tsx?$/))
       .filter((f) => /from\s+["'](@supabase\/|@\/lib\/supabase)/.test(readFileSync(f, "utf8")))
       .filter((f) => !AUTH_DIRS.some((dir) => f.includes(resolve(ROOT, dir))))
       .map((f) => f.replace(`${ROOT}/`, ""));

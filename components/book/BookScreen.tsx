@@ -12,7 +12,11 @@ import {
   monthTotal,
   topCategory,
 } from "@/lib/domain/summary";
-import { useBook } from "@/state/book-store";
+import { useBookActions } from "@/state/book-actions";
+import { useBook, windowExpenses, windowStatus } from "@/state/book-store";
+import { useRefreshOnVisible } from "@/state/use-refresh-on-visible";
+
+import { MonthError, MonthLoading, WriteFailureToast } from "./BookStatus";
 
 import { AccountControl } from "./AccountControl";
 import { MonthHeader } from "./MonthHeader";
@@ -26,8 +30,16 @@ import { RegisterButton } from "./RegisterButton";
 import styles from "./BookScreen.module.css";
 
 export default function BookScreen() {
-  const { state, dispatch } = useBook();
-  const { expenses, viewedMonth, filter, today, sheet: sheetState } = state;
+  const context = useBook();
+  const { state, dispatch } = context;
+  const actions = useBookActions(context);
+
+  // The book catches up when the tab comes back (9.2). What is still in flight
+  // survives the merge, so this cannot undo something the user just did (9.4).
+  useRefreshOnVisible(() => void actions.refresh());
+  const { viewedMonth, filter, today, sheet: sheetState } = state;
+  // The window flattened: every pure function below still sees a plain list.
+  const expenses = windowExpenses(state, viewedMonth);
 
   const breakdown = categoryBreakdown(expenses, viewedMonth);
   /*
@@ -58,9 +70,13 @@ export default function BookScreen() {
       ? (expenses.find((e) => e.id === sheetState.expenseId) ?? null)
       : null;
 
+  // A window that has not fully arrived must not have its figures presented as
+  // final (4.2); one that failed says so rather than reading as $0 (3.6, 4.4).
+  const status = windowStatus(state, viewedMonth);
+
   const canGoForward = viewedMonth < monthKeyOf(today);
   const goto = (delta: number) =>
-    dispatch({ type: "setMonth", month: addMonths(viewedMonth, delta) });
+    void actions.goTo(addMonths(viewedMonth, delta));
 
   return (
     <div className={styles.screen}>
@@ -97,7 +113,11 @@ export default function BookScreen() {
 
       <span className={styles.rule} />
 
-      {isEmptyMonth ? (
+      {status === "loading" ? (
+        <MonthLoading month={viewedMonth} />
+      ) : status === "error" ? (
+        <MonthError month={viewedMonth} onRetry={() => void actions.refresh()} />
+      ) : isEmptyMonth ? (
         <EmptyMonth month={viewedMonth} onRegister={openSheet} />
       ) : (
         <>
@@ -119,21 +139,27 @@ export default function BookScreen() {
           key={editing.id}
           mode="edit"
           expense={editing}
-          onSubmit={(draft) => dispatch({ type: "edit", expenseId: editing.id, draft })}
-          onDelete={() => dispatch({ type: "delete", expenseId: editing.id })}
+          onSubmit={(draft) => void actions.edit(editing.id, draft)}
+          onDelete={() => void actions.remove(editing.id)}
           onDismiss={closeSheet}
         />
       )}
 
-      {state.pendingDeletion && (
-        <UndoToast onUndo={() => dispatch({ type: "undoDelete" })} />
+      {state.pendingDeletion && <UndoToast onUndo={() => void actions.undo()} />}
+
+      {state.failure && (
+        <WriteFailureToast
+          failure={state.failure}
+          onRetry={() => void actions.retryFailure()}
+          onDismiss={actions.dismissFailure}
+        />
       )}
 
       {sheetState.mode === "create" && (
         <ExpenseSheet
           mode="create"
           defaultDate={defaultDate}
-          onSubmit={(draft) => dispatch({ type: "register", draft })}
+          onSubmit={(draft) => void actions.register(draft)}
           onDismiss={closeSheet}
         />
       )}

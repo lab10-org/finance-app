@@ -2,7 +2,7 @@
 
 import { CATEGORY_BY_ID } from "@/lib/domain/categories";
 import type { Expense } from "@/lib/domain/types";
-import { formatCop } from "@/lib/format";
+import { formatAmount } from "@/lib/format";
 
 import { CategoryGlyph } from "./CategoryGlyph";
 import styles from "./ExpenseRow.module.css";
@@ -36,7 +36,7 @@ export function ExpenseRow({ expense, onSelect }: ExpenseRowProps) {
         </span>
       </span>
       <span className={styles.amount} data-testid="row-amount">
-        {formatCop(expense.amountCop)}
+        {formatAmount(expense)}
       </span>
     </button>
   );

@@ -2,12 +2,14 @@ import { fireEvent, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import BookScreen from "@/components/book/BookScreen";
-import { SEED_EXPENSES } from "@/lib/seed";
+import { seededBook } from "@/lib/domain/__tests__/fixtures";
+
+const SEEDED = seededBook();
 
 import { renderInBook } from "./render-book";
 
 const sheet = () => within(screen.getByTestId("expense-sheet"));
-const target = SEED_EXPENSES.find(
+const target = SEEDED.find(
   (e) => e.description === "Crepes & Waffles" && e.date === "2026-09-02",
 )!;
 

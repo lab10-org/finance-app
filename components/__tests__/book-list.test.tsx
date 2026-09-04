@@ -5,7 +5,9 @@ import { screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import BookScreen from "@/components/book/BookScreen";
-import { SEED_EXPENSES } from "@/lib/seed";
+import { seededBook } from "@/lib/domain/__tests__/fixtures";
+
+const SEEDED = seededBook();
 
 import { SheetProbe, renderInBook } from "./render-book";
 
@@ -40,7 +42,7 @@ describe("jornadas (1.2, 1.3, 1.4, 1.5)", () => {
 describe("an expense row (1.6, 1.7, 1.8)", () => {
   it("shows the glyph, the title, the category and the amount", () => {
     renderInBook(<BookScreen />);
-    const row = screen.getByTestId("row-" + SEED_EXPENSES.find((e) => e.description === "Café Velvet" && e.date === "2026-09-03")!.id);
+    const row = screen.getByTestId("row-" + SEEDED.find((e) => e.description === "Café Velvet" && e.date === "2026-09-03")!.id);
 
     expect(within(row).getByTestId("row-glyph")).toBeInTheDocument();
     expect(within(row).getByTestId("row-title")).toHaveTextContent("Café Velvet");
@@ -52,7 +54,7 @@ describe("an expense row (1.6, 1.7, 1.8)", () => {
     const { user } = renderInBook(<BookScreen />);
     await user.click(screen.getByRole("button", { name: /mes anterior/i }));
 
-    const undescribed = SEED_EXPENSES.find((e) => e.description === undefined)!;
+    const undescribed = SEEDED.find((e) => e.description === undefined)!;
     const row = screen.getByTestId(`row-${undescribed.id}`);
 
     expect(within(row).getByTestId("row-title")).toHaveTextContent("Otros");
@@ -76,7 +78,7 @@ describe("tapping a row (5.1)", () => {
         <SheetProbe />
       </>,
     );
-    const target = SEED_EXPENSES.find(
+    const target = SEEDED.find(
       (e) => e.description === "Netflix" && e.date === "2026-09-02",
     )!;
 

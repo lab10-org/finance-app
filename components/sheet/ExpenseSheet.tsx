@@ -31,7 +31,7 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
 
   const initial = props.mode === "edit" ? props.expense : null;
   const [amount, setAmount] = useState(
-    initial ? formatAmountInput(String(initial.amountCop)) : "",
+    initial ? formatAmountInput(String(initial.amount)) : "",
   );
   const [categoryId, setCategoryId] = useState<CategoryId | null>(
     initial?.categoryId ?? null,
@@ -51,13 +51,13 @@ export function ExpenseSheet(props: ExpenseSheetProps) {
     amountRef.current?.focus();
   }, []);
 
-  const amountCop = parseAmountInput(amount);
-  const canConfirm = amountCop > 0 && categoryId !== null;
+  const amountValue = parseAmountInput(amount);
+  const canConfirm = amountValue > 0 && categoryId !== null;
 
   const confirm = () => {
     if (!canConfirm || categoryId === null) return;
     props.onSubmit({
-      amountCop,
+      amount: amountValue,
       categoryId,
       description: description.trim() || undefined,
       date,
