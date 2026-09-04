@@ -1,6 +1,6 @@
 # Requirements — Supabase Auth sign-in
 
-**Status:** In review
+**Status:** Approved
 **Date:** 2026-09-04
 **Author:** Juan Sebastian Henao Parra
 
@@ -250,27 +250,29 @@ happened, so that I am not staring at a screen that silently does nothing.
 
 ## Open questions
 
-- **A six-digit code, or a magic link?** — *Decided as a code; needs the author's
-  confirmation.* Both are the same Supabase mechanism and the choice is
-  reversible, but it is a real fork and it shapes Requirement 3 entirely. The
-  code was chosen because the app is mobile-first and installable: a link tapped
-  inside a mail app opens in that app's in-app browser, which lands the session
-  in a browser the person was not using, leaving them still signed out where they
-  started. A code is typed into the tab that is already open, so the session
-  lands where it was asked for — and during development it is read straight out
-  of the local mail catcher. Flip this at the review and Requirement 3 gets
-  rewritten around a callback instead. — **Author** — blocks Requirement 3 and
-  the design.
-- **There is no mockup for "la entrada".** `docs/mockups/v1.pen` holds two
-  frames, both of them the book (`zKnc1`, `s2nLha`). Either a frame gets drawn
-  before implementation, or the screen is derived from the tokens and reviewed in
-  the browser. — **Author** — blocks the visual half of Requirement 7.
-- **Where does `"Cerrar sesión"` live?** The book header currently holds only the
-  month stepper; v1 removed the search icon (criterion 8.7 of the prototype
-  spec), which leaves exactly one free slot on the right of the header. Using it
-  is the obvious answer, but it is a design decision on a screen that was already
-  reviewed. — **Author** — blocks criterion 6.1.
-- **How long should a session last before it forces a fresh sign-in?** Supabase's
-  default is a long-lived refresh token, which suits a personal expense app. A
-  shorter ceiling is a security choice nobody has made yet. — **Author** — blocks
-  criterion 5.2 being testable against a number.
+All four questions raised in the first draft were closed at the 2026-09-04
+review. They are kept here with their resolutions, because the reasoning is the
+part worth reading later.
+
+- **A six-digit code, or a magic link?** *Resolved: a six-digit code.* Both are
+  the same Supabase mechanism and the choice is reversible, but it shapes
+  Requirement 3 entirely. The code wins because the app is mobile-first and
+  installable: a link tapped inside a mail app opens in that app's in-app
+  browser, which lands the session in a browser the person was not using, leaving
+  them still signed out where they started. A code is typed into the tab that is
+  already open, so the session lands where it was asked for — and during
+  development it is read straight out of the local mail catcher. Requirement 3
+  stands as written.
+- **There is no mockup for "la entrada".** *Resolved: derive it from the tokens.*
+  `docs/mockups/v1.pen` holds two frames, both of them the book (`zKnc1`,
+  `s2nLha`), and no frame will be drawn before implementation. "La entrada" is
+  built from the design tokens under Requirement 7 and reviewed in the browser.
+- **Where does `"Cerrar sesión"` live?** *Resolved: in the book header, in the
+  slot the search icon vacated.* v1 removed that icon (criterion 8.7 of the
+  prototype spec), which leaves exactly one free position on the right of the
+  header. Criterion 6.1 is satisfied there.
+- **How long should a session last before it forces a fresh sign-in?**
+  *Resolved: Supabase's default refresh-token lifetime, unchanged.* A long-lived
+  session suits a personal expense app, and no shorter ceiling is imposed in this
+  feature. Criterion 5.2 is tested against the configured default rather than a
+  number chosen here.
