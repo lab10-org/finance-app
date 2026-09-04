@@ -1,0 +1,153 @@
+/*
+ * "La entrada" — the screen that guards the book.
+ *
+ * Same column as the book (7.1) and nothing but the tokens from
+ * app/globals.css (7.2); app/__tests__/no-stray-colours.test.ts walks this
+ * directory, so a raw hex here fails the suite.
+ */
+
+.shell {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+
+.column {
+  width: 100%;
+  max-width: 390px;
+  margin-inline: auto;
+  padding: var(--screen-pad);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--screen-pad);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+
+.label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+.field {
+  width: 100%;
+  padding: 12px 14px;
+  font: inherit;
+  color: var(--text-primary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  outline: none;
+}
+
+.field::placeholder {
+  color: var(--text-tertiary);
+}
+
+.field:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.field[aria-invalid="true"] {
+  border-color: var(--accent-2);
+}
+
+/* 7.3: the digits are a number, so they take the numeric font. */
+.num {
+  font-family: var(--font-num);
+  font-size: 24px;
+  letter-spacing: 0.28em;
+  text-align: center;
+}
+
+.sentTo {
+  margin: 0 0 8px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.address {
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--accent);
+}
+
+.primary {
+  margin-top: 8px;
+  padding: 14px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--surface);
+  background: var(--accent);
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  background: var(--accent-3);
+  cursor: default;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.secondary {
+  padding: 8px 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.secondary:disabled {
+  color: var(--text-tertiary);
+  cursor: default;
+}

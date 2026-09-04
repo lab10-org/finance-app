@@ -46,9 +46,9 @@ more later than the checkmark next to it.
 - [x] T4 — Auth failures and their Spanish messages
 - [x] T5 — The `AuthClient` seam over Supabase
 - [x] T6 — The "la entrada" state machine
-- [ ] T7 — "La entrada": the email step
-- [ ] T8 — "La entrada": the code step
-- [ ] T9 — "La entrada": layout, tokens and copy at 390px
+- [x] T7 — "La entrada": the email step
+- [x] T8 — "La entrada": the code step
+- [x] T9 — "La entrada": layout, tokens and copy at 390px
 - [ ] T10 — The route decision and `proxy.ts`
 - [ ] T11 — The server session and the gated routes
 - [ ] T12 — Session context and the session guard
@@ -394,7 +394,7 @@ Done. `lib/auth/entrada-machine.ts` with 35 tests, including the table for
 
 ### T7 — "La entrada": the email step
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 2.1, 2.2, 2.3, 2.6, 7.4, 7.5, 7.6 —
   `components/entrada/Entrada.tsx`, `components/entrada/EmailStep.tsx`
 - **Depends on:** T5, T6
@@ -420,11 +420,23 @@ Done. `lib/auth/entrada-machine.ts` with 35 tests, including the table for
 
 **Decision log**
 
+- The network lives in one `useEffect` keyed on `status`, guarded by an
+  `inFlight` ref. The reducer decides *that* a request should happen by moving
+  to `"sending"` / `"verifying"`; keeping the call itself out of the reducer is
+  what leaves it pure enough to table-test.
+- `FakeAuthClient` is typed as `{ [K in keyof AuthClient]: Mock<AuthClient[K]> }`.
+  The first version declared the methods as bare `ReturnType<typeof vi.fn>`,
+  which typechecks in isolation but is not assignable to `AuthClient`.
+
 **Outcome**
+
+Done. `Entrada.tsx`, `EmailStep.tsx` and the shared `fake-auth.tsx` helper, with
+9 tests covering focus, the two rejected-address paths, the double-tap guard and
+the unreachable-service path with its development hint.
 
 ### T8 — "La entrada": the code step
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 2.7, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 7.3, 7.4, 7.5, 7.6 —
   `components/entrada/CodeStep.tsx`
 - **Depends on:** T7
@@ -452,11 +464,28 @@ Done. `lib/auth/entrada-machine.ts` with 35 tests, including the table for
 
 **Decision log**
 
+- **Added to the design:** the cooldown is derived from the clock rather than
+  stored, so nothing re-rendered as it ran down and the countdown sat frozen at
+  60. `Entrada` now ticks once a second, and only while there is something to
+  count.
+- Testing Library does not recognise vitest's fake timers: `findBy*` keeps
+  polling in real time and every await times out at 5 s. Most tests therefore
+  inject the clock through the `now` prop with real timers. The three that need
+  the countdown to actually move install fake timers **before** mounting —
+  vitest can only drive an interval created after installation — and narrow
+  them to `toFake: ["setInterval", "clearInterval"]`, because faking everything
+  freezes React's own scheduler and nothing resolves at all.
+
 **Outcome**
+
+Done. `CodeStep.tsx` plus the verify, resend and back paths, with 13 tests. The
+pair that matters most: the same provider answer becomes "ese código no es"
+within the TTL and "el código venció" past it, and neither message names the
+address.
 
 ### T9 — "La entrada": layout, tokens and copy at 390px
 
-- **Status:** `[ ]`
+- **Status:** `[x]`
 - **Traces to:** 7.1, 7.2, 7.3, 7.4 — `components/entrada/Entrada.module.css`
 - **Depends on:** T7, T8
 - **Objective:** the sign-in screen reads as the same product as the book at
@@ -482,7 +511,21 @@ Done. `lib/auth/entrada-machine.ts` with 35 tests, including the table for
 
 **Decision log**
 
+- The test file is `entrada-layout.test.tsx`, not `.ts` as the plan wrote: the
+  copy assertion renders the component, which needs JSX.
+- The copy assertion is a closed set, not a keyword scan. Every visible string
+  in `h1, p, label, button` must appear in the table, so English text added
+  later fails rather than merely going unnoticed.
+- A second assertion requires every `color` / `background` declaration to be a
+  `var(--…)`, which is stricter than "no raw hex" and catches a named colour
+  like `white` that the global guard would let through.
+
 **Outcome**
+
+Done. `Entrada.module.css` written against the tokens only, with 7 tests. The
+column matches the book at 390px and centres on wider screens; the code field
+uses `--font-num`. Visual review at 390px and 1280px is folded into the T14
+manual pass, since `npm run dev` needs the stack up to render past the gate.
 
 ### T10 — The route decision and `proxy.ts`
 
