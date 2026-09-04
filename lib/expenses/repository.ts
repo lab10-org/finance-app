@@ -39,8 +39,16 @@ interface PostgrestFailure {
   message: string;
 }
 
+/*
+ * `operation` is the sentence the user reads: `messageOf` in
+ * `state/book-actions.ts` prefers `error.message` over its own fallback, so
+ * whatever is put here lands in the aviso. That is why the driver's own text
+ * does not go in it — "No se pudo guardar el gasto: TypeError: Failed to fetch"
+ * is an apology in Spanish with an English stack trace stapled to the end.
+ * The cause is kept, so nothing is lost for the console or a report.
+ */
 function fail(operation: string, error: PostgrestFailure): never {
-  throw new Error(`${operation}: ${error.message}`);
+  throw new Error(operation, { cause: error });
 }
 
 export function createExpenseRepository(client: SupabaseClient): ExpenseRepository {

@@ -895,6 +895,50 @@ gets `permission denied` rather than an empty list.
 The dev server was left running on port 3001 for the user to exercise the
 browser-only parts by hand.
 
+## Verification pass (2026-09-04, `/verify-implementation`)
+
+The feature was explored in a real browser by the `plan-e2e` subagent and then
+pinned with three Playwright tests in `e2e/libro.spec.ts` — one file, the plan in
+its header comment:
+
+1. *el gasto registrado sigue ahí después de recargar* (1.1, 1.2, 3.1, 3.2, 5.1,
+   5.2) — the round trip through the real insert, RLS and the server read.
+2. *dos cuentas en el mismo navegador ven libros distintos* (2.2, 2.4, 2.6, 8.1,
+   8.5) — with the counter-assertion that the second book is the seeded one, so
+   an accidentally empty book cannot pass as isolation.
+3. *lo eliminado no vuelve, pero deshacer sí lo trae* (1.5, 6.3–6.7) — the
+   reload inside the undo window, which is the only way to observe 6.6.
+
+`npm run typecheck` clean, `npm test` **508 passing across 53 files**,
+`npm run test:e2e` **6 passing**.
+
+**Two defects were found and fixed here.**
+
+- **The header stated figures while the window was still being read (4.2, and
+  3.6 for the failed case).** `BookScreen` derives the total, the "comparativo",
+  the previous month, the average and the biggest category from `expenses`,
+  which is empty until the window lands — so a month being read showed
+  `TOTAL GASTADO $0` in headline type and then jumped to the real total. T12's
+  own decision log had already ruled that showing nothing beats showing
+  something wrong, but the rule was applied to the list only and never to the
+  header above it. `MonthTotal` and `SummaryRow` now take a `pending` flag and
+  show `—` with no note, instead of a figure that reads as final. The existing
+  4.2 unit test asserted only that the loading panel appeared, which is why it
+  stayed green through the bug; it now asserts the header is silent too, and a
+  matching assertion covers the failed read.
+- **A raw English exception reached the user (5.4, and the project's language
+  convention).** `fail()` in `lib/expenses/repository.ts` concatenated the
+  driver's own text, so a dropped connection produced *"No se pudo guardar el
+  gasto: TypeError: Failed to fetch"*. The cause now travels as the `Error`'s
+  `cause` — kept for the console, out of the aviso. Three repository tests that
+  asserted the concatenated text now assert both halves: the Spanish message and
+  the retained cause.
+
 ## Open items
 
-None yet. Filled during execution.
+- **A seeded account created on the 1st or 2nd of a month opens with expenses
+  dated in the future (touches 8.2).** The eight `monthOffset: 0` rows of
+  `lib/seed.ts` fall on days 1, 2 and 3 of the creation month; nothing in
+  requirement 8 says what a seeded book should do when those days have not
+  happened yet. Not observable on 2026-09-04, and not decided here: it is a
+  product question, not a defect against a written criterion.

@@ -87,7 +87,33 @@ describe("a month still arriving (4.2)", () => {
 
     expect(screen.getByTestId("month-loading")).toBeInTheDocument();
 
+    /*
+     * Y el encabezado calla mientras tanto. Sin esto la prueba pasaba con la
+     * pantalla diciendo "TOTAL GASTADO $0" en tipografía de titular sobre un mes
+     * que todavía se estaba leyendo: un panel de "cargando" debajo no arregla
+     * una cifra que arriba se lee como definitiva, que es lo que 4.2 prohíbe.
+     */
+    expect(screen.getByTestId("month-total")).toHaveTextContent("—");
+    expect(screen.queryByTestId("month-comparison")).not.toBeInTheDocument();
+    for (const metrica of ["previous", "average", "top"]) {
+      expect(within(screen.getByTestId(`metric-${metrica}`)).getByTestId("metric-value"))
+        .toHaveTextContent("—");
+    }
+
     await repo.release();
+  });
+});
+
+describe("un mes que no se pudo leer tampoco declara cifras (3.6)", () => {
+  it("no dice que el gasto del mes fue cero", () => {
+    renderBook({ expenses: [], error: true });
+
+    // El panel de error ya lo cubre la prueba de arriba; lo que se comprueba
+    // acá es que el encabezado no contradiga al panel afirmando $0.
+    expect(screen.getByTestId("month-total")).toHaveTextContent("—");
+    expect(
+      within(screen.getByTestId("metric-previous")).getByTestId("metric-value"),
+    ).toHaveTextContent("—");
   });
 });
 

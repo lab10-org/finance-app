@@ -73,6 +73,14 @@ export default function BookScreen() {
   // A window that has not fully arrived must not have its figures presented as
   // final (4.2); one that failed says so rather than reading as $0 (3.6, 4.4).
   const status = windowStatus(state, viewedMonth);
+  /*
+   * The header derives its figures from `expenses`, which is empty until the
+   * window lands — so without this flag it states `$0` in headline type while a
+   * month is being read, and jumps to the real total afterwards. That is the
+   * "incomplete figures as if they were final" 4.2 forbids, and the "empty book
+   * that misrepresents their spending as zero" of 3.6 when the read failed.
+   */
+  const pending = status !== "loaded";
 
   const canGoForward = viewedMonth < monthKeyOf(today);
   const goto = (delta: number) =>
@@ -91,6 +99,7 @@ export default function BookScreen() {
         <MonthTotal
           total={visibleTotal}
           comparison={monthComparison(expenses, viewedMonth)}
+          pending={pending}
         />
         <CategoryBreakdown slices={breakdown} />
       </header>
@@ -102,6 +111,7 @@ export default function BookScreen() {
         }}
         average={dailyAverage(expenses, viewedMonth, today)}
         top={topCategory(expenses, viewedMonth)}
+        pending={pending}
       />
 
       <CategoryFilter

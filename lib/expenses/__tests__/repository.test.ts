@@ -74,9 +74,14 @@ describe("readWindow (3.3, 4.1)", () => {
   it("throws when the read fails, so the caller can say so (3.6)", async () => {
     const fake = createFakeClient({ error: { message: "network down" } });
 
-    await expect(
-      createExpenseRepository(fake.client).readWindow("2026-09"),
-    ).rejects.toThrow(/network down/);
+    /*
+     * El mensaje es el que el usuario lee, así que va en español y no arrastra
+     * el texto del driver; el detalle se conserva como `cause`, para la consola.
+     */
+    await expect(createExpenseRepository(fake.client).readWindow("2026-09")).rejects.toMatchObject({
+      message: "No se pudieron leer los gastos",
+      cause: { message: "network down" },
+    });
   });
 });
 
@@ -120,9 +125,10 @@ describe("create (5.7, 5.8)", () => {
   it("rethrows any other failure (5.4)", async () => {
     const fake = createFakeClient({ error: { code: "23514", message: "amount must be positive" } });
 
-    await expect(
-      createExpenseRepository(fake.client).create(draft, "key-1"),
-    ).rejects.toThrow(/amount must be positive/);
+    await expect(createExpenseRepository(fake.client).create(draft, "key-1")).rejects.toMatchObject({
+      message: "No se pudo guardar el gasto",
+      cause: { message: "amount must be positive" },
+    });
   });
 });
 
@@ -183,6 +189,9 @@ describe("softDelete and restore (6.4, 6.5, 6.10)", () => {
   it("reports a failed deletion so the book can put the row back (6.8)", async () => {
     const fake = createFakeClient({ error: { message: "offline" } });
 
-    await expect(createExpenseRepository(fake.client).softDelete("a")).rejects.toThrow(/offline/);
+    await expect(createExpenseRepository(fake.client).softDelete("a")).rejects.toMatchObject({
+      message: "No se pudo eliminar el gasto",
+      cause: { message: "offline" },
+    });
   });
 });
